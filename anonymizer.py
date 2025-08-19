@@ -13,8 +13,15 @@ Files (same directory as this script):
   - anonymizer-mapping.txt   # mapping file: "<HASH> = <ORIGINAL>"
 
 Rules:
-  - Encode replaces ONLY tokens like [[word]] with a random hash (length configurable).
-  - Decode replaces ONLY tokens that look like a hash (exact length) back to original (if mapping exists).
+  - Encode:
+      * Detect tokens like [[word]].
+      * Create/reuse a hash per distinct marked word.
+      * Replace ALL occurrences of each marked word across the whole text
+        (marked and unmarked) with the same hash.
+      * Finally, strip any remaining [[word]] to plain "word".
+  - Decode:
+      * Replace tokens that look like a hash (exact hash length) back to original
+        using the mapping; unmatched tokens remain unchanged.
 """
 
 import argparse
@@ -36,8 +43,9 @@ MAPPING_FILENAME = "anonymizer-mapping.txt"
 # Allowed alphabet for hashes (alphanumeric). Keep in sync with decode regex.
 HASH_ALPHABET = string.ascii_letters + string.digits
 
-# Regex to find [[token]] during encode; excludes whitespace and nested brackets
-ENCODE_PATTERN = re.compile(r"\[\[([^\[\]\s]+)\]\]")
+# Regex to find [[token or phrase]] during encode
+# Captures anything inside [[...]] except nested brackets
+ENCODE_PATTERN = re.compile(r"\[\[([^\[\]]+)\]\]")
 
 def script_dir() -> Path:
     """Return the directory where this script resides."""
@@ -99,6 +107,7 @@ def append_mappings(mapping_path: Path, new_pairs: Dict[str, str]) -> None:
     with mapping_path.open("a", encoding="utf-8") as f:
         for h, orig in new_pairs.items():
             f.write(f"{h} = {orig}\n")
+
 def encode() -> None:
     input_path, mapping_path = file_paths()
     text = read_text(input_path)
@@ -106,10 +115,10 @@ def encode() -> None:
     hash_to_orig, orig_to_hash = load_mapping(mapping_path)
     newly_created: Dict[str, str] = {}
 
-    # Collect all unique tokens that were marked [[...]]
+    # Collect all unique tokens that were marked [[...]] in the ORIGINAL text
     marked = set(ENCODE_PATTERN.findall(text))
 
-    # Build mapping for each marked token
+    # Prepare/extend mapping for each marked token
     for original in marked:
         if original not in orig_to_hash:
             new_hash = generate_hash(hash_to_orig)
@@ -117,19 +126,23 @@ def encode() -> None:
             orig_to_hash[original] = new_hash
             newly_created[new_hash] = original
 
-    # Replace ALL occurrences (word boundaries) of each original with its hash
+    # Replace ALL occurrences (full-word matches) of each marked word with its hash
     new_text = text
-    for original, h in orig_to_hash.items():
-        if original in marked:  # only process those seen with [[...]]
-            # \b ensures only full words are replaced
-            pattern = re.compile(rf"\b{re.escape(original)}\b")
-            new_text = pattern.sub(h, new_text)
+    for original in marked:
+        h = orig_to_hash[original]
+        # \b ensures only full words are replaced; respects Unicode word chars
+        pattern = re.compile(rf"\b{re.escape(original)}\b")
+        new_text = pattern.sub(h, new_text)
+
+    # Final cleanup: strip any remaining [[word]] to "word"
+    # (in case some brackets remained for words we chose not to anonymize)
+    new_text = ENCODE_PATTERN.sub(lambda m: m.group(1), new_text)
 
     # Persist results
     write_text(input_path, new_text)
     append_mappings(mapping_path, newly_created)
 
-    print(f"Encoded. Replaced {len(marked)} token type(s).")
+    print(f"Encoded. Processed {len(marked)} token type(s).")
 
 def decode() -> None:
     input_path, mapping_path = file_paths()
@@ -140,8 +153,7 @@ def decode() -> None:
         print("No mappings found. Nothing to decode.")
         return
 
-    # Build regex to match any token that *could* be a hash:
-    # word boundary + exact length of alphanumerics + word boundary
+    # Match any token that *could* be a hash: exact length alphanumerics with word boundaries
     hash_regex = re.compile(rf"\b([A-Za-z0-9]{{{HASH_LENGTH}}})\b")
 
     replacements = 0
@@ -166,14 +178,12 @@ def parse_args(argv=None) -> argparse.Namespace:
     parser.add_argument(
         "mode",
         choices=["encode", "decode"],
-        help="encode: [[word]] -> <HASH>; decode: <HASH> -> original (if mapping exists)",
+        help="encode: [[word]] & all occurrences -> <HASH>; decode: <HASH> -> original (if mapping exists)",
     )
     return parser.parse_args(argv)
 
 def main() -> None:
-    # Ensure working directory independence by using script dir paths
     args = parse_args()
-    # Create mapping file if it doesn't exist to avoid surprises later
     _, mapping_path = file_paths()
     if not mapping_path.exists():
         mapping_path.touch()
