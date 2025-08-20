@@ -13,7 +13,7 @@ Gedacht, um sensible Inhalte vor der Weitergabe an externe KI-Dienste zu schütz
   ```
 
 - **Encoding** (`python anonymizer.py encode`):  
-  - Erstellt für jedes markierte Wort/Phrase einen zufälligen Hash (Standard: 10 Zeichen alphanumerisch).  
+  - Erstellt für jedes markierte Wort/Phrase einen zufälligen Hash (Standard: 8 Zeichen alphanumerisch).  
   - Ersetzt **alle Vorkommen** dieses Wortes/Phrase im Text (auch unmarkierte) durch denselben Hash.  
   - Schreibt neue Mappings in `anonymizer-mapping.txt` im Format:  
     ```
@@ -100,7 +100,7 @@ Später erwähnt Alice noch einmal Super Nova.
 
 ## Konfiguration
 
-- **Hash-Länge**: Im Skript konfigurierbar (`HASH_LENGTH = 10`).  
+- **Hash-Länge**: Im Skript konfigurierbar (`HASH_LENGTH = 8`).  
 - **Zeichensatz**: Alphanumerisch (`A–Za–z0–9`).  
 - **Mapping-Datei**: bleibt dauerhaft bestehen und wächst bei jedem neuen Token.  
 

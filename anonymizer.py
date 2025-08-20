@@ -36,7 +36,7 @@ import string
 # -----------------------------
 # Configuration (adjust here)
 # -----------------------------
-HASH_LENGTH = 10  # Default hash length; adjust if needed
+HASH_LENGTH = 8  # Default hash length; adjust if needed
 INPUT_FILENAME = "anonymizer-input.txt"
 MAPPING_FILENAME = "anonymizer-mapping.txt"
 
