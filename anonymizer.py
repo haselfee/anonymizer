@@ -112,13 +112,14 @@ def encode() -> None:
     input_path, mapping_path = file_paths()
     text = read_text(input_path)
 
+    # Load mapping
     hash_to_orig, orig_to_hash = load_mapping(mapping_path)
     newly_created: Dict[str, str] = {}
 
-    # Collect all unique tokens that were marked [[...]] in the ORIGINAL text
+    # Step 1: detect new marked tokens [[...]]
     marked = set(ENCODE_PATTERN.findall(text))
 
-    # Prepare/extend mapping for each marked token
+    # add new mappings if not present yet
     for original in marked:
         if original not in orig_to_hash:
             new_hash = generate_hash(hash_to_orig)
@@ -126,23 +127,22 @@ def encode() -> None:
             orig_to_hash[original] = new_hash
             newly_created[new_hash] = original
 
-    # Replace ALL occurrences (full-word matches) of each marked word with its hash
+    # Step 2: replace ALL occurrences of every known mapping
     new_text = text
-    for original in marked:
-        h = orig_to_hash[original]
-        # \b ensures only full words are replaced; respects Unicode word chars
+    for original, h in orig_to_hash.items():
         pattern = re.compile(rf"\b{re.escape(original)}\b")
         new_text = pattern.sub(h, new_text)
 
-    # Final cleanup: strip any remaining [[word]] to "word"
-    # (in case some brackets remained for words we chose not to anonymize)
+    # Step 3: clean up any leftover [[...]] -> word
     new_text = ENCODE_PATTERN.sub(lambda m: m.group(1), new_text)
 
-    # Persist results
+    # Persist
     write_text(input_path, new_text)
     append_mappings(mapping_path, newly_created)
 
-    print(f"Encoded. Processed {len(marked)} token type(s).")
+    print(f"Encoded. Added {len(newly_created)} new mapping(s). "
+          f"Applied total of {len(orig_to_hash)} mapping(s).")
+
 
 def decode() -> None:
     input_path, mapping_path = file_paths()
