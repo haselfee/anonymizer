@@ -9,6 +9,3 @@ pytest:
     - pip install pytest
   script:
     - pytest -q
-  # Falls euer Group-Runner Tags verlangt, auskommentieren:
-  # tags:
-  #   - docker  stage: test
