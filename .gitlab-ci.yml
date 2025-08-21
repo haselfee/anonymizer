@@ -1,15 +1,9 @@
-build-job:
-  stage: build
-  script:
-    - echo "Hello, $GITLAB_USER_LOGIN!"
+stages: [test]
 
-test-job1:
+pytest:
   stage: test
+  image: python:3.12
+  before_script:
+    - pip install -U pip pytest
   script:
-    - echo "This job tests something"
-
-deploy-prod:
-  stage: deploy
-  script:
-    - echo "This job deploys something from the $CI_COMMIT_BRANCH branch."
-  environment: production
+    - pytest -q
