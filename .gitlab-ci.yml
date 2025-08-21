@@ -1,12 +1,36 @@
-stages: [test]
+# .gitlab-ci.yml
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PYTHONUNBUFFERED: "1"
 
-pytest:
-  stage: test
+stages:
+  - test
+
+default:
   image: python:3.12.3
+  cache:
+    key: "${CI_COMMIT_REF_SLUG}"
+    paths:
+      - .cache/pip
   before_script:
     - python -V
     - pip install --upgrade pip
     - if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - pip install pytest
+    - if [ -f pyproject.toml ] || [ -f setup.py ]; then pip install -e .; fi
+
+pytest:
+  stage: test
   script:
-    - pytest -q
+    - pip install pytest pytest-cov
+    - pytest --maxfail=1 --disable-warnings \
+        --cov=./ --cov-report=xml:coverage.xml --cov-report=term \
+        --junitxml=junit.xml
+  artifacts:
+    when: always
+    reports:
+      junit: junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      - .pytest_cache/
