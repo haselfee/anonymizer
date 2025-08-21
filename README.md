@@ -1,5 +1,6 @@
 # Anonymizer
 
+
 Kommandozeilen-Tool in Python zum Anonymisieren und Deanonymisieren von Namen, Phrasen oder Produkten in Textdateien.  
 Gedacht, um sensible Inhalte vor der Weitergabe an externe KI-Dienste zu schützen.
 
