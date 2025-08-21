@@ -3,7 +3,6 @@ stages: [test]
 pytest:
   stage: test
   image: python:3.12
-  before_script:
-    
+ 
   script:
     - pytest -q
