@@ -43,6 +43,14 @@ def copy_script(src_dir: Path, dst_dir: Path):
     dst = dst_dir / SCRIPT_NAME
     dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
 
+def parse_mapping(text: str):
+    pairs = []
+    for line in text.splitlines():
+        if "=" in line:
+            h, orig = line.split("=", 1)
+            pairs.append((h.strip(), orig.strip()))
+    return pairs
+
 def hash_pattern(length: int = 8):
     return re.compile(rf"\b[A-Za-z0-9]{{{length}}}\b")
 
@@ -82,16 +90,20 @@ def test_encode_handles_phrases_with_spaces(tmp_path: Path):
 
     run_cli(tmp_path, "encode")
     out = read(tmp_path, INPUT_FILE)
+    mapping = read(tmp_path, MAP_FILE)
+    pairs = parse_mapping(mapping)
 
-    # All occurrences of the phrase must be the same hash
-    hp = hash_pattern()
-    tokens = hp.findall(out)
-    hashes = [t for t in tokens if is_hash(t, HASH_LENGTH)]
-    assert len(set(hashes)) == 1
-    # Phrase should be fully replaced; no brackets left
+    # genau 1 neues Mapping (für "Super Nova") erwartet
+    assert len(pairs) == 1
+    h, orig = pairs[0]
+    assert orig == "Super Nova"
+
+    # der Hash aus dem Mapping muss 2x im Text auftauchen (beide Vorkommen ersetzt)
+    assert out.count(h) == 2
+
+    # Originalphrase darf nicht mehr im Text stehen, Klammern weg
     assert "Super Nova" not in out
     assert "[[" not in out and "]]" not in out
-
 
 def test_encode_applies_existing_mapping_without_marks(tmp_path: Path):
     repo_root = Path.cwd()
