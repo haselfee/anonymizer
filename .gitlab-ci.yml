@@ -1,8 +1,7 @@
-stages: [test]
-
 pytest:
   stage: test
   image: python:3.12
- 
+  before_script:
+    - pip install -U pip pytest
   script:
     - pytest -q
