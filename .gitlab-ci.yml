@@ -8,6 +8,7 @@ pytest:
     - pip install --upgrade pip
     - pip install pytest
   script:
-    - pytest -q
     - echo "CI_REGISTRY=$CI_REGISTRY"
     - echo "CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE"
+    - pytest -q
+  
