@@ -1,5 +1,17 @@
+stages:
+  - test
+
 pytest:
   stage: test
+  image: python:3.12
+  before_script:
+    - pip install --upgrade pip
+    - pip install pytest
+  script:
+    - pytest -q
+  # Falls euer Group-Runner Tags verlangt, auskommentieren:
+  # tags:
+  #   - docker  stage: test
   image: python:3.12
   before_script:
     - pip install -U pip pytest
