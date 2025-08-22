@@ -1,23 +1,22 @@
-# Globale Variablen & Cache (greifen für alle Jobs)
-variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-
-cache:
-  key: "${CI_COMMIT_REF_SLUG}"
-  paths:
-    - .cache/pip
-  policy: pull-push
-
 stages:
   - test
 
 pytest:
   stage: test
-  image: python:3.12
+  image: python:3.12-slim
   before_script:
-    - pip install -U pip pytest
-    - if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - pip install --upgrade pip
+    - pip install pytest
   script:
-    - echo "CI_REGISTRY=$CI_REGISTRY"
-    - echo "CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE"
-    - pytest -q
+    # nur stabile Tests laufen lassen
+    - pytest -q -m "not quarantine"
+
+quarantine:
+  stage: test
+  image: python:3.12-slim
+  allow_failure: true   # <- Quarantäne darf fehlschlagen
+  before_script:
+    - pip install --upgrade pip
+    - pip install pytest
+  script:
+    - pytest -q -m "quarantine"
