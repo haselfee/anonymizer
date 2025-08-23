@@ -5,8 +5,8 @@ import re
 import pytest
 
 SCRIPT_NAME = "anonymizer.py"
-INPUT_FILE = "anonymizer-input.txt"
-MAP_FILE = "anonymizer-mapping.txt"
+INPUT_FILE = "input.txt"
+MAP_FILE = "mapping.txt"
 
 import importlib.util
 

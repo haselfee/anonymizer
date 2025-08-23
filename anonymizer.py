@@ -6,8 +6,8 @@ from pathlib import Path
 HASH_LENGTH = 8  # tests import this
 
 # --- Files (müssen zu den Tests passen) ---
-INPUT_FILE = "anonymizer-input.txt"
-MAP_FILE   = "anonymizer-mapping.txt"   # Format: <TOKEN> = <ORIGINAL>
+INPUT_FILE = "input.txt"
+MAP_FILE   = "mapping.txt"   # Format: <TOKEN> = <ORIGINAL>
 
 # --- Token-Generator: 8 Zeichen [A-Za-z0-9] ---
 _ALNUM = string.ascii_letters + string.digits

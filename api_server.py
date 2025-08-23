@@ -17,7 +17,7 @@ class TextOut(BaseModel):
     text: str
     mapping: Dict[str, str]  # ORIGINAL -> TOKEN
 
-MAP_PATH = Path("anonymizer-mapping.txt")
+MAP_PATH = Path("mapping.txt")
 
 @app.get("/health")
 def health() -> dict:
