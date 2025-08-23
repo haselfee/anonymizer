@@ -1,200 +1,132 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-anonymizer.py — CLI tool to anonymize/de-anonymize marked tokens in a text file.
-
-Usage:
-  python anonymizer.py encode
-  python anonymizer.py decode
-
-Files (same directory as this script):
-  - anonymizer-input.txt     # input AND output text file
-  - anonymizer-mapping.txt   # mapping file: "<HASH> = <ORIGINAL>"
-
-Rules:
-  - Encode:
-      * Detect tokens like [[word]].
-      * Create/reuse a hash per distinct marked word.
-      * Replace ALL occurrences of each marked word across the whole text
-        (marked and unmarked) with the same hash.
-      * Finally, strip any remaining [[word]] to plain "word".
-  - Decode:
-      * Replace tokens that look like a hash (exact hash length) back to original
-        using the mapping; unmatched tokens remain unchanged.
-"""
-
-import argparse
-import re
-import sys
+# anonymizer.py
+from __future__ import annotations
+import sys, re, secrets, string
 from pathlib import Path
-from typing import Dict, Tuple
-import secrets
-import string
 
-# -----------------------------
-# Configuration (adjust here)
-# -----------------------------
-HASH_LENGTH = 8  # Default hash length; adjust if needed
-INPUT_FILENAME = "anonymizer-input.txt"
-MAPPING_FILENAME = "anonymizer-mapping.txt"
+# --- Public API expected by tests ---
+HASH_LENGTH = 8  # tests import this
 
-# Allowed alphabet for hashes (alphanumeric). Keep in sync with decode regex.
-HASH_ALPHABET = string.ascii_letters + string.digits
+# --- Files (müssen zu den Tests passen) ---
+INPUT_FILE = "anonymizer-input.txt"
+MAP_FILE   = "anonymizer-mapping.txt"   # Format: <TOKEN> = <ORIGINAL>
 
-# Regex to find [[token or phrase]] during encode
-# Captures anything inside [[...]] except nested brackets
-ENCODE_PATTERN = re.compile(r"\[\[([^\[\]]+)\]\]")
+# --- Token-Generator: 8 Zeichen [A-Za-z0-9] ---
+_ALNUM = string.ascii_letters + string.digits
+def _random_token(length: int = HASH_LENGTH) -> str:
+    return "".join(secrets.choice(_ALNUM) for _ in range(length))
 
-def script_dir() -> Path:
-    """Return the directory where this script resides."""
-    return Path(__file__).resolve().parent
+def anonymize(_: str) -> str:
+    """Return a random 8-char alphanumeric token. Non-deterministic by design."""
+    return _random_token(HASH_LENGTH)
 
-def file_paths() -> Tuple[Path, Path]:
-    """Return absolute paths for input and mapping files."""
-    base = script_dir()
-    return base / INPUT_FILENAME, base / MAPPING_FILENAME
-
-def load_mapping(mapping_path: Path) -> Tuple[Dict[str, str], Dict[str, str]]:
+# --- Mapping IO: Datei speichert "TOKEN = ORIGINAL" ---
+def load_mapping(path: Path) -> tuple[dict[str, str], dict[str, str]]:
     """
-    Load mapping file.
-
     Returns:
-      - hash_to_orig: {hash -> original}
-      - orig_to_hash: {original -> hash} (built for quick lookup)
-    Ignores malformed lines gracefully.
+      forward: ORIGINAL -> TOKEN
+      reverse: TOKEN -> ORIGINAL
     """
-    hash_to_orig: Dict[str, str] = {}
-    if mapping_path.exists():
-        with mapping_path.open("r", encoding="utf-8") as f:
+    forward: dict[str, str] = {}
+    reverse: dict[str, str] = {}
+    if path.exists():
+        with path.open("r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line or "=" not in line:
                     continue
-                # Expected format: <HASH> = <Original>
-                left, right = line.split("=", 1)
-                h = left.strip()
-                orig = right.strip()
-                if h and orig:
-                    hash_to_orig[h] = orig
+                token, original = map(str.strip, line.split("=", 1))
+                if token and original:
+                    reverse[token] = original
+                    forward[original] = token
+    return forward, reverse
 
-    # Build reverse mapping (last one wins if duplicates exist)
-    orig_to_hash = {orig: h for h, orig in hash_to_orig.items()}
-    return hash_to_orig, orig_to_hash
+def save_mapping(path: Path, forward: dict[str, str]) -> None:
+    # Schreibe konsistent als "TOKEN = ORIGINAL", sortiert nach ORIGINAL für Stabilität
+    items = sorted(((tok, orig) for orig, tok in forward.items()), key=lambda x: x[1].lower())
+    with path.open("w", encoding="utf-8") as f:
+        for tok, orig in items:
+            f.write(f"{tok} = {orig}\n")
 
-def generate_hash(existing: Dict[str, str]) -> str:
-    """Generate a unique random hash not present in 'existing' mapping keys."""
-    while True:
-        candidate = "".join(secrets.choice(HASH_ALPHABET) for _ in range(HASH_LENGTH))
-        if candidate not in existing:
-            return candidate
+# --- Regex-Helfer ---
+_MARKED = re.compile(r"\[\[(.+?)\]\]")  # [[...]] (auch Phrasen mit Leerzeichen)
+def _word_boundary_pattern(term: str) -> re.Pattern:
+    esc = re.escape(term)
+    # \b nur, wenn term "wortartig" ist; sonst exakter Escape
+    if re.fullmatch(r"[0-9A-Za-zÄÖÜäöüß_]+", term):
+        return re.compile(rf"\b{esc}\b")
+    return re.compile(esc)
 
-def read_text(input_path: Path) -> str:
-    if not input_path.exists():
-        # Create empty file if missing to keep behavior predictable
-        input_path.write_text("", encoding="utf-8")
-        return ""
-    return input_path.read_text(encoding="utf-8")
+# --- Encode / Decode auf INPUT_FILE in place ---
+def encode_text(src: str, forward: dict[str, str]) -> tuple[str, dict[str, str]]:
+    """
+    forward: ORIGINAL -> TOKEN (wird ggf. ergänzt)
+    """
+    # 1) Markierte Begriffe sammeln, Tokens vergeben (neu oder aus Mapping)
+    marked = _MARKED.findall(src)
+    for term in marked:
+        if term not in forward:
+            forward[term] = anonymize(term)
 
-def write_text(input_path: Path, text: str) -> None:
-    input_path.write_text(text, encoding="utf-8")
+    # 2) Markierte Stellen direkt ersetzen
+    def _repl_marked(m: re.Match) -> str:
+        term = m.group(1)
+        tok = forward.setdefault(term, anonymize(term))
+        return tok
+    out = _MARKED.sub(_repl_marked, src)
 
-def append_mappings(mapping_path: Path, new_pairs: Dict[str, str]) -> None:
-    """Append new mappings (<HASH> = <Original>) to the mapping file."""
-    if not new_pairs:
-        return
-    with mapping_path.open("a", encoding="utf-8") as f:
-        for h, orig in new_pairs.items():
-            f.write(f"{h} = {orig}\n")
+    # 3) Unmarkierte Vorkommen bereits bekannter Begriffe ersetzen
+    for term, tok in forward.items():
+        pat = _word_boundary_pattern(term)
+        out = pat.sub(tok, out)
 
-def encode() -> None:
-    input_path, mapping_path = file_paths()
-    text = read_text(input_path)
+    # 4) Restliche Klammern (falls übrig) strippen
+    out = out.replace("[[", "").replace("]]", "")
+    return out, forward
 
-    # Load mapping
-    hash_to_orig, orig_to_hash = load_mapping(mapping_path)
-    newly_created: Dict[str, str] = {}
+def decode_text(src: str, reverse: dict[str, str]) -> str:
+    """
+    reverse: TOKEN -> ORIGINAL
+    """
+    out = src
+    for tok, term in reverse.items():
+        pat = _word_boundary_pattern(tok)
+        out = pat.sub(term, out)
+    return out
 
-    # Step 1: detect new marked tokens [[...]]
-    marked = set(ENCODE_PATTERN.findall(text))
+# --- CLI ---
+def main(argv: list[str]) -> int:
+    if len(argv) < 2 or argv[1] not in {"encode", "decode"}:
+        print("Usage: python anonymizer.py [encode|decode]")
+        return 2
 
-    # add new mappings if not present yet
-    for original in marked:
-        if original not in orig_to_hash:
-            new_hash = generate_hash(hash_to_orig)
-            hash_to_orig[new_hash] = original
-            orig_to_hash[original] = new_hash
-            newly_created[new_hash] = original
+    mode = argv[1]
+    cwd = Path.cwd()
+    in_path  = cwd / INPUT_FILE
+    map_path = cwd / MAP_FILE
 
-    # Step 2: replace ALL occurrences of every known mapping
-    new_text = text
-    for original, h in orig_to_hash.items():
-        pattern = re.compile(rf"\b{re.escape(original)}\b")
-        new_text = pattern.sub(h, new_text)
+    forward, reverse = load_mapping(map_path)
 
-    # Step 3: clean up any leftover [[...]] -> word
-    new_text = ENCODE_PATTERN.sub(lambda m: m.group(1), new_text)
+    if mode == "encode":
+        if not in_path.exists():
+            print(f"Input file not found: {INPUT_FILE}", file=sys.stderr)
+            return 1
+        src = in_path.read_text(encoding="utf-8")
+        out, forward2 = encode_text(src, forward)
+        in_path.write_text(out, encoding="utf-8")   # IN PLACE schreiben (Test erwartet das)
+        save_mapping(map_path, forward2)
+        return 0
 
-    # Persist
-    write_text(input_path, new_text)
-    append_mappings(mapping_path, newly_created)
+    if mode == "decode":
+        if not in_path.exists():
+            print(f"Input file not found: {INPUT_FILE}", file=sys.stderr)
+            return 1
+        src = in_path.read_text(encoding="utf-8")
+        out = decode_text(src, reverse)
+        in_path.write_text(out, encoding="utf-8")   # IN PLACE zurückschreiben
+        # Mapping bleibt unverändert
+        return 0
 
-    print(f"Encoded. Added {len(newly_created)} new mapping(s). "
-          f"Applied total of {len(orig_to_hash)} mapping(s).")
-
-
-def decode() -> None:
-    input_path, mapping_path = file_paths()
-    text = read_text(input_path)
-
-    hash_to_orig, _ = load_mapping(mapping_path)
-    if not hash_to_orig:
-        print("No mappings found. Nothing to decode.")
-        return
-
-    # Match any token that *could* be a hash: exact length alphanumerics with word boundaries
-    hash_regex = re.compile(rf"\b([A-Za-z0-9]{{{HASH_LENGTH}}})\b")
-
-    replacements = 0
-
-    def replace(match: re.Match) -> str:
-        nonlocal replacements
-        token = match.group(1)
-        original = hash_to_orig.get(token)
-        if original is not None:
-            replacements += 1
-            return original
-        return token  # leave untouched if not in mapping
-
-    new_text = hash_regex.sub(replace, text)
-    write_text(input_path, new_text)
-    print(f"Decoded. Restored {replacements} token(s).")
-
-def parse_args(argv=None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Anonymize [[tokens]] in anonymizer-input.txt using anonymizer-mapping.txt."
-    )
-    parser.add_argument(
-        "mode",
-        choices=["encode", "decode"],
-        help="encode: [[word]] & all occurrences -> <HASH>; decode: <HASH> -> original (if mapping exists)",
-    )
-    return parser.parse_args(argv)
-
-def main() -> None:
-    args = parse_args()
-    _, mapping_path = file_paths()
-    if not mapping_path.exists():
-        mapping_path.touch()
-
-    if args.mode == "encode":
-        encode()
-    else:
-        decode()
+    return 2
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\nAborted by user.", file=sys.stderr)
-        sys.exit(130)
+    raise SystemExit(main(sys.argv))
