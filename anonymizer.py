@@ -1,5 +1,4 @@
 # anonymizer.py
-from __future__ import annotations
 import sys, re, secrets, string
 from pathlib import Path
 
