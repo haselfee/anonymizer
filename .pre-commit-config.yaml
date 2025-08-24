@@ -1,0 +1,11 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.3.0   # aktuelle Black-Version prüfen
+    hooks:
+      - id: black
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9   # aktuelle Ruff-Version prüfen
+    hooks:
+      - id: ruff
+        args: [--fix]  # optional: direkt fixen statt nur prüfen

@@ -6,17 +6,21 @@ import string
 from pathlib import Path
 
 INPUT_FILE = "input.txt"
-MAP_FILE   = "mapping.txt"   # Format: <TOKEN> = <ORIGINAL>
+MAP_FILE = "mapping.txt"  # Format: <TOKEN> = <ORIGINAL>
 HASH_LENGTH = 8  # tests import this
 
 # --- Token-Generator: 8 Zeichen [A-Za-z0-9] ---
 _ALNUM = string.ascii_letters + string.digits
+
+
 def _random_token(length: int = HASH_LENGTH) -> str:
     return "".join(secrets.choice(_ALNUM) for _ in range(length))
+
 
 def anonymize(_: str) -> str:
     """Return a random 8-char alphanumeric token. Non-deterministic by design."""
     return _random_token(HASH_LENGTH)
+
 
 # --- Mapping IO: Datei speichert "TOKEN = ORIGINAL" ---
 def load_mapping(path: Path) -> tuple[dict[str, str], dict[str, str]]:
@@ -39,21 +43,28 @@ def load_mapping(path: Path) -> tuple[dict[str, str], dict[str, str]]:
                     forward[original] = token
     return forward, reverse
 
+
 def save_mapping(path: Path, forward: dict[str, str]) -> None:
     # Schreibe konsistent als "TOKEN = ORIGINAL", sortiert nach ORIGINAL für Stabilität
-    items = sorted(((tok, orig) for orig, tok in forward.items()), key=lambda x: x[1].lower())
+    items = sorted(
+        ((tok, orig) for orig, tok in forward.items()), key=lambda x: x[1].lower()
+    )
     with path.open("w", encoding="utf-8") as f:
         for tok, orig in items:
             f.write(f"{tok} = {orig}\n")
 
+
 # --- Regex-Helfer ---
 _MARKED = re.compile(r"\[\[(.+?)\]\]")  # [[...]] (auch Phrasen mit Leerzeichen)
+
+
 def _word_boundary_pattern(term: str) -> re.Pattern:
     esc = re.escape(term)
     # \b nur, wenn term "wortartig" ist; sonst exakter Escape
     if re.fullmatch(r"[0-9A-Za-zÄÖÜäöüß_]+", term):
         return re.compile(rf"\b{esc}\b")
     return re.compile(esc)
+
 
 # --- Encode / Decode auf INPUT_FILE in place ---
 def encode_text(src: str, forward: dict[str, str]) -> tuple[str, dict[str, str]]:
@@ -71,6 +82,7 @@ def encode_text(src: str, forward: dict[str, str]) -> tuple[str, dict[str, str]]
         term = m.group(1)
         tok = forward.setdefault(term, anonymize(term))
         return tok
+
     out = _MARKED.sub(_repl_marked, src)
 
     # 3) Unmarkierte Vorkommen bereits bekannter Begriffe ersetzen
@@ -82,6 +94,7 @@ def encode_text(src: str, forward: dict[str, str]) -> tuple[str, dict[str, str]]
     out = out.replace("[[", "").replace("]]", "")
     return out, forward
 
+
 def decode_text(src: str, reverse: dict[str, str]) -> str:
     """
     reverse: TOKEN -> ORIGINAL
@@ -92,6 +105,7 @@ def decode_text(src: str, reverse: dict[str, str]) -> str:
         out = pat.sub(term, out)
     return out
 
+
 # --- CLI ---
 def main(argv: list[str]) -> int:
     if len(argv) < 2 or argv[1] not in {"encode", "decode"}:
@@ -100,7 +114,7 @@ def main(argv: list[str]) -> int:
 
     mode = argv[1]
     cwd = Path.cwd()
-    in_path  = cwd / INPUT_FILE
+    in_path = cwd / INPUT_FILE
     map_path = cwd / MAP_FILE
 
     forward, reverse = load_mapping(map_path)
@@ -111,7 +125,9 @@ def main(argv: list[str]) -> int:
             return 1
         src = in_path.read_text(encoding="utf-8")
         out, forward2 = encode_text(src, forward)
-        in_path.write_text(out, encoding="utf-8")   # IN PLACE schreiben (Test erwartet das)
+        in_path.write_text(
+            out, encoding="utf-8"
+        )  # IN PLACE schreiben (Test erwartet das)
         save_mapping(map_path, forward2)
         return 0
 
@@ -121,11 +137,12 @@ def main(argv: list[str]) -> int:
             return 1
         src = in_path.read_text(encoding="utf-8")
         out = decode_text(src, reverse)
-        in_path.write_text(out, encoding="utf-8")   # IN PLACE zurückschreiben
+        in_path.write_text(out, encoding="utf-8")  # IN PLACE zurückschreiben
         # Mapping bleibt unverändert
         return 0
 
     return 2
+
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv))

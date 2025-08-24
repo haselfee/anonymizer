@@ -18,20 +18,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Wir definieren die API-Richtung klar: mapping == ORIGINAL -> TOKEN
 class TextIn(BaseModel):
     text: str
     mapping: Optional[Dict[str, str]] = None  # ORIGINAL -> TOKEN (optional)
 
+
 class TextOut(BaseModel):
     text: str
     mapping: Dict[str, str]  # ORIGINAL -> TOKEN
 
+
 MAP_PATH = Path("mapping.txt")
+
 
 @app.get("/health")
 def health() -> dict:
     return {"ok": True}
+
 
 @app.post("/encode", response_model=TextOut)
 def encode(req: TextIn) -> TextOut:
@@ -45,9 +50,12 @@ def encode(req: TextIn) -> TextOut:
     anonymizer.save_mapping(MAP_PATH, forward2)  # speichert als "TOKEN = ORIGINAL"
     return TextOut(text=out_text, mapping=forward2)
 
+
 @app.post("/decode", response_model=TextOut)
 def decode(req: TextIn) -> TextOut:
-    forward, reverse = anonymizer.load_mapping(MAP_PATH)  # ORIGINAL->TOKEN, TOKEN->ORIGINAL
+    forward, reverse = anonymizer.load_mapping(
+        MAP_PATH
+    )  # ORIGINAL->TOKEN, TOKEN->ORIGINAL
     # optionales Mapping des Clients mergen (ORIGINAL->TOKEN)
     if req.mapping:
         for orig, tok in req.mapping.items():
