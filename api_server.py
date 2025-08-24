@@ -19,7 +19,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # Wir definieren die API-Richtung klar: mapping == ORIGINAL -> TOKEN
 class TextIn(BaseModel):
     text: str
