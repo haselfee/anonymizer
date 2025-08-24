@@ -25,7 +25,7 @@ lint:
   <<: *default_install
   script:
     - ruff check .
-    # - black --check .
+    - black --check .
     # optional:
     # - mypy .
 
