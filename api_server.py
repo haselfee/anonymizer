@@ -8,6 +8,18 @@ import anonymizer  # nutzt deine encode_text/decode_text + Mapping-IO
 
 app = FastAPI(title="Anonymizer API")
 
+# api_server.py (Ergänzung oben nach app = FastAPI(...))
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200", "http://127.0.0.1:4200"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 # Wir definieren die API-Richtung klar: mapping == ORIGINAL -> TOKEN
 class TextIn(BaseModel):
     text: str

@@ -204,3 +204,40 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+######################################
+
+# Node modules
+node_modules/
+
+# Build output (Angular CLI)
+dist/
+out-tsc/
+
+# IDE / Editor Settings
+.vscode/
+.idea/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Environment files (falls lokal, nicht im Repo)
+*.local
+
+# Angular cache
+.angular/
+
+# Coverage reports
+coverage/
+
+# Optional: keep environment.ts tracked, but ignore private overrides
+# environment.*.ts
+

@@ -1,0 +1,30 @@
+/* You can add global styles to this file, and also import other style files */
+:root { --gap: 12px; }
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: system-ui, Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 860px;
+  margin: 2rem auto;
+  padding: 1rem 1.25rem;
+}
+
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.buttons button {
+  margin-right: .5rem;
+}
+
+.state, .error, h2, .mapping { margin-top: .75rem; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ddd; padding: .5rem; }
+th { background: #f6f6f6; text-align: left; }
