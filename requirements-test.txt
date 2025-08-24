@@ -1,0 +1,6 @@
+# baut auf Dev auf (damit Linter lokal/CI verfügbar sind)
+-r requirements-dev.txt
+
+pytest
+pytest-asyncio
+httpx

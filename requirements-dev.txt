@@ -1,0 +1,8 @@
+# baut auf Prod auf
+-r requirements.txt
+
+# Linting/Format/Typing (optional, aber empfehlenswert)
+ruff
+black
+mypy
+types-requests
