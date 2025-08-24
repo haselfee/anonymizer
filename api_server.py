@@ -3,13 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, Optional
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
 import anonymizer  # nutzt deine encode_text/decode_text + Mapping-IO
 
 app = FastAPI(title="Anonymizer API")
-
-# api_server.py (Ergänzung oben nach app = FastAPI(...))
-from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,

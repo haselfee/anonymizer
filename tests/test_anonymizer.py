@@ -1,14 +1,13 @@
-import sys
-import subprocess
-from pathlib import Path
 import re
+import sys
 import pytest
+import subprocess
+import importlib.util
+from pathlib import Path
 
 SCRIPT_NAME = "anonymizer.py"
 INPUT_FILE = "input.txt"
 MAP_FILE = "mapping.txt"
-
-import importlib.util
 
 # load HASH_LENGTH from anonymizer.py
 spec = importlib.util.spec_from_file_location("anonymizer", Path.cwd() / "anonymizer.py")
@@ -50,9 +49,6 @@ def parse_mapping(text: str):
             h, orig = line.split("=", 1)
             pairs.append((h.strip(), orig.strip()))
     return pairs
-
-def hash_pattern(length: int = 8):
-    return re.compile(rf"\b[A-Za-z0-9]{{{length}}}\b")
 
 def is_hash(token: str, length: int) -> bool:
     return (

@@ -1,13 +1,13 @@
 # anonymizer.py
-import sys, re, secrets, string
+import re
+import sys
+import secrets
+import string
 from pathlib import Path
 
-# --- Public API expected by tests ---
-HASH_LENGTH = 8  # tests import this
-
-# --- Files (müssen zu den Tests passen) ---
 INPUT_FILE = "input.txt"
 MAP_FILE   = "mapping.txt"   # Format: <TOKEN> = <ORIGINAL>
+HASH_LENGTH = 8  # tests import this
 
 # --- Token-Generator: 8 Zeichen [A-Za-z0-9] ---
 _ALNUM = string.ascii_letters + string.digits
