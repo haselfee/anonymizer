@@ -1,48 +1,29 @@
 <div class="container">
-    <h1>Anonymizer UI</h1>
+  <h1>Anonymizer</h1>
 
-    <div class="controls">
-    <textarea id="input"
-                [(ngModel)]="inputText"
-                [disabled]="isBusy"
-                rows="8"
-                class="w-full"
-                placeholder="Text hier eingeben..."></textarea>
-
-    <div class="buttons" style="margin-top: .5rem;">
-        <button (click)="onEncode()" [disabled]="isBusy">ENCODE</button>
-        <button (click)="onDecode()" [disabled]="isBusy">DECODE</button>
-        <button (click)="copyOutput()" [disabled]="isBusy">⟲ Output → Input</button>
-    </div>
-    </div>
-
-    <div class="state" *ngIf="isBusy" style="margin-top: .5rem;">
-    Bitte warten…
-    </div>
-
-    <div class="error" *ngIf="errorMsg as err" style="margin-top: .5rem; color: #b00;">
-    Fehler: {{ err }}
-    </div>
-
-    <h2 style="margin-top: 1rem;">Result</h2>
-    <textarea id="output"
-            [value]="outputText"
-            readonly
+  <textarea [(ngModel)]="text"
+            [disabled]="isBusy"
             rows="12"
-            class="w-full"></textarea>
+            placeholder="Text hier einfügen und mit ENCODE/DECODE transformieren…"></textarea>
 
-    <div class="mapping" *ngIf="mapping | keyvalue as pairs" style="margin-top: 1rem;">
+  <div class="buttons" style="margin-top:.5rem;">
+    <button (click)="onEncode()" [disabled]="isBusy">ENCODE</button>
+    <button (click)="onDecode()" [disabled]="isBusy">DECODE</button>
+  </div>
+
+  <div *ngIf="isBusy" style="margin-top:.5rem;">Bitte warten…</div>
+  <div *ngIf="errorMsg as err" style="margin-top:.5rem;color:#b00;">Fehler: {{ err }}</div>
+
+  <div *ngIf="mapping | keyvalue as pairs" style="margin-top:1rem;">
     <h3>Mapping</h3>
     <table>
-        <thead>
-        <tr><th>Key</th><th>Value</th></tr>
-        </thead>
-        <tbody>
+      <thead><tr><th>Key</th><th>Value</th></tr></thead>
+      <tbody>
         <tr *ngFor="let p of pairs">
-            <td>{{ p.key }}</td>
-            <td>{{ p.value }}</td>
+          <td>{{ p.key }}</td>
+          <td>{{ p.value }}</td>
         </tr>
-        </tbody>
+      </tbody>
     </table>
-    </div>
+  </div>
 </div>

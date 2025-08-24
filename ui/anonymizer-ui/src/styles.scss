@@ -1,30 +1,50 @@
-/* You can add global styles to this file, and also import other style files */
-:root { --gap: 12px; }
+.container { max-width: 860px; margin: 2rem auto; padding: 1rem 1.25rem; }
+textarea { width: 100%; box-sizing: border-box; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.buttons button { margin-right: .5rem; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ddd; padding: .5rem; }
+th { background: #f6f6f6; text-align: left; }
 
-html, body { height: 100%; }
 body {
   margin: 0;
   font-family: system-ui, Arial, sans-serif;
   line-height: 1.5;
+  background-color: #0d1b2a;   // dunkles Blau
+  color: #f0f4f8;              // helles Textgrau für Kontrast
+}
+
+textarea, input, button {
+  font-family: inherit;
+}
+
+textarea {
+  background-color: #1b263b;   // etwas helleres Blau
+  color: #f0f4f8;
+  border: 1px solid #415a77;
+  padding: .5rem;
+  border-radius: 4px;
+}
+
+button {
+  background-color: #415a77;
+  color: #f0f4f8;
+  border: none;
+  padding: .5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background-color: #778da9;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .container {
   max-width: 860px;
   margin: 2rem auto;
-  padding: 1rem 1.25rem;
+  padding: 1rem;
 }
-
-textarea {
-  width: 100%;
-  box-sizing: border-box;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-
-.buttons button {
-  margin-right: .5rem;
-}
-
-.state, .error, h2, .mapping { margin-top: .75rem; }
-table { border-collapse: collapse; width: 100%; }
-th, td { border: 1px solid #ddd; padding: .5rem; }
-th { background: #f6f6f6; text-align: left; }

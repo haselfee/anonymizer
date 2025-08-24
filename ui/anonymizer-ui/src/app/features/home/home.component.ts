@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';     // für *ngIf, *ngFor, keyvalue
-import { FormsModule } from '@angular/forms';        // für [(ngModel)]
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 type AnonymizeResponse = {
@@ -15,28 +15,15 @@ type AnonymizeResponse = {
   templateUrl: './home.component.html',
 })
 export class HomeComponent {
-  // Form-State (Properties, keine Signals)
-  inputText: string = '';
-  outputText: string = '';
+  text: string = '';                        // Ein einziges Textfeld
   isBusy: boolean = false;
   errorMsg: string | null = null;
-
-  // Optional: Mapping anzeigen, falls Backend das liefert
   mapping: Record<string, string> | null = null;
 
   constructor(private http: HttpClient) {}
 
-  onEncode(): void {
-    this.run('/api/encode', this.inputText);
-  }
-
-  onDecode(): void {
-    this.run('/api/decode', this.inputText);
-  }
-
-  copyOutput(): void {
-    this.inputText = this.outputText;
-  }
+  onEncode(): void { this.run('/api/encode', this.text); }
+  onDecode(): void { this.run('/api/decode', this.text); }
 
   private run(url: string, text: string): void {
     this.isBusy = true;
@@ -45,8 +32,8 @@ export class HomeComponent {
     this.http.post<AnonymizeResponse>(url, { text })
       .subscribe({
         next: (res) => {
-          this.outputText = res.text ?? '';
-          this.mapping = res.mapping ?? null;
+          this.text = res.text ?? '';              // Ergebnis überschreibt den Inhalt
+          this.mapping = res.mapping ?? null;      // optional anzeigen
           this.isBusy = false;
         },
         error: (err) => {
