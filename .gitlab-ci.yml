@@ -23,9 +23,7 @@ variables:
 cache:
   key:
     files:
-      - requirements.txt
-      - requirements-dev.txt
-      - requirements-test.txt
+       - requirements-test.txt   # reicht, invalidiert transitiv
     prefix: "pip-v1-${CI_JOB_IMAGE}"
   paths:
     - .cache/pip/
