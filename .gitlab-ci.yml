@@ -20,11 +20,11 @@ cache:
     - pip install --upgrade pip
     - pip install -r requirements-test.txt
 
-#lint:
-#  stage: lint
-#  <<: *default_install
-#  script:
-    # - ruff check .
+lint:
+  stage: lint
+  <<: *default_install
+  script:
+    - ruff check .
     # - black --check .
     # optional:
     # - mypy .
