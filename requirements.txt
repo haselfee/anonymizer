@@ -1,0 +1,4 @@
+# requirements.txt
+fastapi
+httpx
+pytest
