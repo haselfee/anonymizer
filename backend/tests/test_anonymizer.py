@@ -45,11 +45,13 @@ def write(cwd: Path, filename: str, content: str):
 def read(cwd: Path, filename: str) -> str:
     return (cwd / filename).read_text(encoding="utf-8")
 
+
 def copy_script(src_dir: Path, dst_dir: Path):
     """Copy backend/anonymizer.py into the tmp test dir."""
     src = src_dir / "backend" / SCRIPT_NAME
     dst = dst_dir / SCRIPT_NAME
     dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+
 
 def parse_mapping(text: str):
     pairs = []
