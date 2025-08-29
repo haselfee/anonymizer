@@ -9,10 +9,13 @@ SCRIPT_NAME = "anonymizer.py"
 INPUT_FILE = "input.txt"
 MAP_FILE = "mapping.txt"
 
+
 # load HASH_LENGTH from anonymizer.py
+REPO_ROOT = Path(__file__).resolve().parents[2]  # geht 2 Ebenen hoch: repo-root
 spec = importlib.util.spec_from_file_location(
-    "anonymizer", Path.cwd() / "anonymizer.py"
+    "anonymizer", REPO_ROOT / "backend" / "anonymizer.py"
 )
+
 anonymizer = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(anonymizer)
 
@@ -42,13 +45,11 @@ def write(cwd: Path, filename: str, content: str):
 def read(cwd: Path, filename: str) -> str:
     return (cwd / filename).read_text(encoding="utf-8")
 
-
 def copy_script(src_dir: Path, dst_dir: Path):
-    """Copy anonymizer.py from repo root into the tmp test dir."""
-    src = src_dir / SCRIPT_NAME
+    """Copy backend/anonymizer.py into the tmp test dir."""
+    src = src_dir / "backend" / SCRIPT_NAME
     dst = dst_dir / SCRIPT_NAME
     dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
-
 
 def parse_mapping(text: str):
     pairs = []
@@ -71,8 +72,7 @@ def is_hash(token: str, length: int) -> bool:
 
 def test_encode_replaces_marked_and_unmarked_words_and_strips_brackets(tmp_path: Path):
     # Arrange
-    repo_root = Path.cwd()  # assume pytest is run from repo root
-    copy_script(repo_root, tmp_path)
+    copy_script(REPO_ROOT, tmp_path)
     write(
         tmp_path,
         INPUT_FILE,
@@ -95,8 +95,7 @@ def test_encode_replaces_marked_and_unmarked_words_and_strips_brackets(tmp_path:
 
 
 def test_encode_handles_phrases_with_spaces(tmp_path: Path):
-    repo_root = Path.cwd()
-    copy_script(repo_root, tmp_path)
+    copy_script(REPO_ROOT, tmp_path)
     write(
         tmp_path, INPUT_FILE, "Heute arbeitet [[Super Nova]] mit Super Nova zusammen."
     )
@@ -144,8 +143,7 @@ def test_encode_handles_phrases_with_spaces_test_with_hash(tmp_path: Path):
 
 
 def test_encode_applies_existing_mapping_without_marks(tmp_path: Path):
-    repo_root = Path.cwd()
-    copy_script(repo_root, tmp_path)
+    copy_script(REPO_ROOT, tmp_path)
     # Pre-populate mapping with a known pair
     write(tmp_path, MAP_FILE, "AaBb22Cc = Alice\n")
     write(
@@ -165,8 +163,7 @@ def test_encode_applies_existing_mapping_without_marks(tmp_path: Path):
 
 
 def test_decode_restores_using_mapping_and_leaves_unknown_hashes(tmp_path: Path):
-    repo_root = Path.cwd()
-    copy_script(repo_root, tmp_path)
+    copy_script(REPO_ROOT, tmp_path)
     # Suppose two hashes exist; one is known, one is unknown
     write(tmp_path, MAP_FILE, "HhhhhhhH = Alice\n")
     write(tmp_path, INPUT_FILE, "HhhhhhhH und Zzzzzzzz treffen sich.")
@@ -181,8 +178,7 @@ def test_decode_restores_using_mapping_and_leaves_unknown_hashes(tmp_path: Path)
 
 
 def test_word_boundaries_do_not_replace_substrings(tmp_path: Path):
-    repo_root = Path.cwd()
-    copy_script(repo_root, tmp_path)
+    copy_script(REPO_ROOT, tmp_path)
     write(tmp_path, MAP_FILE, "")
     write(
         tmp_path,
@@ -202,8 +198,7 @@ def test_word_boundaries_do_not_replace_substrings(tmp_path: Path):
 
 
 def test_multiple_marked_tokens_get_distinct_hashes(tmp_path: Path):
-    repo_root = Path.cwd()
-    copy_script(repo_root, tmp_path)
+    copy_script(REPO_ROOT, tmp_path)
     write(tmp_path, MAP_FILE, "")
     write(
         tmp_path,

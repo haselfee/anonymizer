@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-import anonymizer  # nutzt deine encode_text/decode_text + Mapping-IO via import
+from . import anonymizer  # package-relative import aus backend.anonymizer
 
 app = FastAPI(title="Anonymizer API")
 
