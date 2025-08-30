@@ -1,0 +1,25 @@
+version: "3.9"
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: registry.example.com/anonymizer/backend:${TAG:-latest}
+    restart: unless-stopped
+    expose:
+      - "8000"
+    volumes:
+      - backend_data:/app        # persistiert mapping.txt im Container-Arbeitsverz.
+
+  frontend:
+    build:
+      context: .
+    image: registry.example.com/anonymizer/frontend:${TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  backend_data:

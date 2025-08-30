@@ -1,0 +1,33 @@
+version: "3.9"
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["python", "-m", "uvicorn", "backend.api_server:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - ./backend:/app
+      - backend_data:/data          # optional: für mapping.txt, wenn du sie auslagerst
+    ports:
+      - "8000:8000"
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: ["npm", "run", "start"]   # ng serve
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "4200:4200"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+volumes:
+  backend_data:
+
+
+# mapping außerhalb des containers persistieren
+#  volumes:
+#  - ./data/backend:/data
+# environment:
+#  - MAP_PATH=/data/mapping.txt
