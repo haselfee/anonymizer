@@ -14,10 +14,12 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
 
 # Copy requirements first for better caching
 COPY backend/requirements.txt ./requirements.txt
+
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Copy source
-COPY backend/ /app/
+# COPY backend/ /app/
+COPY backend/ /app/backend/
 
 # Security: drop root
 RUN useradd -r -u 10001 appuser && chown -R appuser:appuser /app
