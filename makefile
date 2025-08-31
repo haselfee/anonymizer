@@ -1,3 +1,4 @@
+# Aufruf z.B. make redeploy-frontend
 .PHONY: dev prod up down logs test \
         build-backend build-frontend \
         redeploy-backend redeploy-frontend
