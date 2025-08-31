@@ -1,20 +1,21 @@
-version: "3.9"
+# compose.prod.yml  (ohne "version:")
 services:
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    image: registry.example.com/anonymizer/backend:${TAG:-latest}
+    image: anonymizer-backend:latest
     restart: unless-stopped
     expose:
       - "8000"
     volumes:
-      - backend_data:/app        # persistiert mapping.txt im Container-Arbeitsverz.
+      - backend_data:/app   # optional: persist mapping.txt
 
   frontend:
     build:
       context: .
-    image: registry.example.com/anonymizer/frontend:${TAG:-latest}
+      dockerfile: frontend/Dockerfile
+    image: anonymizer-frontend:latest
     restart: unless-stopped
     depends_on:
       - backend
@@ -22,4 +23,4 @@ services:
       - "8080:80"
 
 volumes:
-  backend_data:
+  backend_data: {}
