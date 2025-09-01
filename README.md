@@ -100,7 +100,7 @@ Später erwähnt Alice noch einmal Super Nova.
 
 ## Konfiguration
 
-- **Hash-Länge**: Im Skript konfigurierbar (`HASH_LENGTH = 10`).  
+- **Hash-Länge**: Im Skript konfigurierbar (`HASH_LENGTH = 8`).  
 - **Zeichensatz**: Alphanumerisch (`A–Za–z0–9`).  
 - **Mapping-Datei**: bleibt dauerhaft bestehen und wächst bei jedem neuen Token.  
 
