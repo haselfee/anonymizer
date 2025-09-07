@@ -1,0 +1,27 @@
+# No registry in dev; we import images into k3d and use pullPolicy: Never
+image:
+  pullSecrets: []    # none for dev
+
+revisionHistoryLimit: 2
+terminationGracePeriodSeconds: 5
+
+backend:
+  repository: anonymizer-backend
+  tag: "1.0.0"
+  pullPolicy: Never
+  replicas: 1
+  port: 8000
+  # servicePort optional; default equals port
+  resources:
+    requests: { cpu: "50m",  memory: "128Mi" }
+    limits:   { cpu: "500m", memory: "512Mi" }
+
+frontend:
+  repository: anonymizer-frontend
+  tag: "1.0.0"
+  pullPolicy: Never
+  replicas: 1
+  port: 80     # NGINX listens on 80 in your image
+  resources:
+    requests: { cpu: "50m",  memory: "64Mi" }
+    limits:   { cpu: "300m", memory: "256Mi" }

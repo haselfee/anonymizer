@@ -5,6 +5,8 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     image: anonymizer-backend:latest
+    security_opt:
+      - apparmor:unconfined
     restart: unless-stopped
     expose:
       - "8000"

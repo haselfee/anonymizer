@@ -1,35 +1,28 @@
-# 1) Build Angular
+# 1) Build stage
 FROM node:20-alpine AS build
 WORKDIR /app
+
+# Install deps
 COPY frontend/package*.json ./
 RUN npm ci
-COPY frontend/ ./
-# ggf. Konfiguration-Name anpassen (production/prod)
-RUN npm run build -- --configuration production
 
-# 2) Serve with Nginx
-FROM nginx:1.27-alpine AS runtime
+# Copy sources & build
+COPY frontend/ .
+# Build and normalize Angular output to /app/www
+# (Angular >=17: dist/<project>/browser/, ältere: dist/<project>/)
+RUN npm run build && \
+    PROJECT_NAME="$(node -e "const j=require('./angular.json');process.stdout.write(j.defaultProject || Object.keys(j.projects||{})[0] || '');")" && \
+    OUTDIR="$(node -e "const j=require('./angular.json');const p=j.projects?.[process.argv[1]];process.stdout.write(p?.architect?.build?.options?.outputPath || 'dist');" "$PROJECT_NAME")" && \
+    mkdir -p /app/www && \
+    if [ -d "$OUTDIR/browser" ]; then cp -r "$OUTDIR/browser/"* /app/www/; \
+    elif [ -d "$OUTDIR/$PROJECT_NAME/browser" ]; then cp -r "$OUTDIR/$PROJECT_NAME/browser/"* /app/www/; \
+    elif [ -d "$OUTDIR/$PROJECT_NAME" ]; then cp -r "$OUTDIR/$PROJECT_NAME/"* /app/www/; \
+    else cp -r "$OUTDIR/"* /app/www/; fi
 
-# Alles aus dem Angular-Build in ein temp-Verzeichnis legen
-# COPY --from=build /app/dist/ /tmp/dist/
-
-# Robust kopieren: Angular <17 (dist/<app>/) oder >=17 (dist/<app>/browser/)
-# RUN set -eux; \
-#    if ls -d /tmp/dist/*/browser >/dev/null 2>&1; then \
-#        cp -R /tmp/dist/*/browser/* /usr/share/nginx/html/; \
-#    elif ls -d /tmp/dist/* >/dev/null 2>&1; then \
-#        cp -R /tmp/dist/*/* /usr/share/nginx/html/ 2>/dev/null || cp -R /tmp/dist/* /usr/share/nginx/html/; \
-#    else \
-#        echo "No Angular build artifacts found under /tmp/dist"; exit 1; \
-#    fi; \
-#    rm -rf /tmp/dist
-
-# siehe angular.json  "outputPath": "dist", 
-COPY --from=build /app/dist/browser/ /usr/share/nginx/html/
-
-# Deine Nginx-Config zuletzt
+# 2) Run stage
+FROM nginx:alpine
+# Optional: SPA-Routing + /api-Proxy (falls gewünscht):
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
-  CMD wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1
+COPY --from=build /app/www/ /usr/share/nginx/html/
+EXPOSE 8080
+CMD ["nginx", "-g", "daemon off;"]

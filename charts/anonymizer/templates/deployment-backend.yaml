@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "anonymizer.fullname" . }}-backend
+  labels: {{- include "anonymizer.labels" . | nindent 4 }}
+spec:
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit | default 2 }}
+  replicas: {{ .Values.backend.replicas | default 1 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  selector:
+    matchLabels: { app: {{ include "anonymizer.fullname" . }}, tier: backend }
+  template:
+    metadata:
+      labels: { app: {{ include "anonymizer.fullname" . }}, tier: backend }
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 5 }}
+      {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.image.pullSecrets }}
+        - name: {{ .name }}
+      {{- end }}
+      {{- end }}
+      containers:
+        - name: backend
+          {{- $repo := .Values.backend.repository -}}
+          {{- $tag  := (.Values.backend.tag | default "latest") -}}
+          {{- if .Values.image.registry }}
+          image: "{{ .Values.image.registry }}/{{ $repo }}:{{ $tag }}"
+          {{- else }}
+          image: "{{ $repo }}:{{ $tag }}"
+          {{- end }}
+          imagePullPolicy: {{ .Values.backend.pullPolicy | default "IfNotPresent" }}
+          ports: [ { containerPort: {{ .Values.backend.port | default 8000 }} } ]
+          readinessProbe:
+            httpGet: { path: /health, port: {{ .Values.backend.port | default 8000 }} }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: {{ .Values.backend.port | default 8000 }} }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          {{- with .Values.backend.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
