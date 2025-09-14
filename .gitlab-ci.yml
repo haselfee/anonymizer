@@ -55,3 +55,15 @@ test:
   <<: *default_install
   script:
     - pytest -q -m "quarantine"
+
+build_push:
+  image: docker:26
+  services: [docker:26-dind]
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  script:
+    - echo "$REGISTRY_TOKEN" | docker login vmgitlab:5050 -u "$REGISTRY_USER" --password-stdin
+    - docker build -t vmgitlab:5050/workaholics/anonymizer/backend:${CI_COMMIT_SHORT_SHA} backend
+    - docker push vmgitlab:5050/workaholics/anonymizer/backend:${CI_COMMIT_SHORT_SHA}
+  rules:
+    - if: $CI_COMMIT_BRANCH

@@ -1,0 +1,12 @@
+ROOT := $(shell git rev-parse --show-toplevel 2>/dev/null || pwd)
+
+.PHONY: preflight login push prod dev
+preflight:
+	@HOST=$(HOST) PORT=$(PORT) REG_USER=$(REG_USER) REG_PASS=$(REG_PASS) \
+	bash $(ROOT)/scripts/registry/preflight.sh
+
+prod:
+	@bash $(ROOT)/scripts/deploy/helm-prod.sh
+
+dev:
+	@bash $(ROOT)/scripts/deploy/helm-dev.sh

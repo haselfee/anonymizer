@@ -1,19 +1,141 @@
-image:
-  registry: gitlab.local:5050/<group>/<project>
-  pullSecrets:
-    - name: gitlab-regcred
+# values.prod.yaml ─ Production settings for charts/anonymizer
 
+global:
+  registryHost: vmgitlab:5050
+  groupPath: workaholics/anonymizer
+
+imagePullSecrets:
+  - name: gitlab-regcred  # kubectl create secret docker-registry gitlab-regcred …
+
+# ───────────────────────────
+# Backend (FastAPI @ :8000)
+# ───────────────────────────
 backend:
-  repository: anonymizer-backend
-  tag: "1.0.0"
-  pullPolicy: IfNotPresent
-  port: 8000
+  enabled: true
+  image:
+    # repository = <registry>/<group>/<project>/<image-name>
+    repository: vmgitlab:5050/workaholics/anonymizer/backend
+    tag: "latest"               # in CI z. B. auf ${CI_COMMIT_SHORT_SHA} setzen
+    pullPolicy: IfNotPresent
+  replicas: 1
 
+  env:
+    # Beispiel-Variablen; ergänze nach Bedarf
+    - name: UVICORN_WORKERS
+      value: "2"
+    - name: LOG_LEVEL
+      value: "info"
+
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+  podSpec:
+    revisionHistoryLimit: 2
+    terminationGracePeriodSeconds: 5
+
+  podAnnotations: {}
+
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+# ───────────────────────────
+# Frontend (HTTP @ :80)
+# ───────────────────────────
 frontend:
-  repository: anonymizer-frontend
-  tag: "1.0.0"
-  pullPolicy: IfNotPresent
-  port: 8080
+  enabled: true
+  image:
+    repository: vmgitlab:5050/workaholics/anonymizer/frontend
+    tag: "latest"               # in CI auf ${CI_COMMIT_SHORT_SHA} setzen
+    pullPolicy: IfNotPresent
+  replicas: 1
 
+  env: []
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
+
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+
+  podSpec:
+    revisionHistoryLimit: 2
+    terminationGracePeriodSeconds: 5
+
+  podAnnotations: {}
+
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 80
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 80
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+# ───────────────────────────
+# Ingress (optional)
+# ───────────────────────────
 ingress:
   enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: anonymizer.local   # <— anpassen (DNS!)
+      paths:
+        - path: /
+          pathType: Prefix
+          service:
+            name: frontend
+            port: 80
+    - host: api.anonymizer.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service:
+            name: backend
+            port: 8000
+  tls:
+    - secretName: anonymizer-tls
+      hosts:
+        - anonymizer.local
+        - api.anonymizer.local
