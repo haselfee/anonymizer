@@ -2,7 +2,7 @@
 import httpx
 import pytest_asyncio
 
-from backend.api_server import app
+from api_server import app
 
 
 @pytest_asyncio.fixture

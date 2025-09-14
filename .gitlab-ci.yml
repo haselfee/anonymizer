@@ -1,19 +1,33 @@
 stages: [lint, test]
 
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  key: "pip"
+  paths:
+    - .cache/pip
+
 default:
   image: python:3.12-slim
   before_script:
     - python -V
     - pip install --upgrade pip
-    - pip install -r requirements-dev.txt
-    # Runtime-Reqs für API-Tests:
-    - pip install fastapi "uvicorn[standard]" pydantic
+    # Runtime-Reqs (FastAPI etc.) – falls vorhanden im Backend:
+    - if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
+    # Dev-Tools (pytest, pytest-cov, ruff, mypy, httpx, …)
+    - |
+      if [ -f requirements-dev.txt ]; then
+        pip install -r requirements-dev.txt
+      else
+        pip install pytest pytest-cov httpx ruff mypy
+      fi
 
 lint:
   stage: lint
   script:
-    - pip install ruff
-    - ruff check backend
+    - ruff check backend --diff
+    - ruff format backend --check
 
 test:
   stage: test
@@ -23,3 +37,6 @@ test:
     when: always
     reports:
       junit: junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
