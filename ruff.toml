@@ -1,0 +1,14 @@
+# ruff.toml
+line-length = 100
+target-version = "py312"
+
+[lint]
+select = [
+  "E","F",        # pycodestyle + pyflakes
+  "I",            # isort
+  "UP",           # pyupgrade
+  "B",            # bugbear
+]
+ignore = [
+  "E501",         # Zeilenlänge, wir managen über line-length
+]

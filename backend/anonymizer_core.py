@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Pure core logic for anonymizer: no file I/O, reusable from CLI and HTTP API.
 """
 
 from __future__ import annotations
+
 import re
 import secrets
 import string
-from typing import Dict, Tuple
 
 # Default configuration; callers may override hash_length
 DEFAULT_HASH_LENGTH = 8
@@ -32,7 +31,7 @@ def anonymize(text: str, length: int = DEFAULT_HASH_LENGTH) -> str:
     )
 
 
-def generate_hash(existing_hashes: Dict[str, str], hash_length: int) -> str:
+def generate_hash(existing_hashes: dict[str, str], hash_length: int) -> str:
     """Generate a unique random hash not present in existing_hashes."""
     while True:
         candidate = "".join(secrets.choice(HASH_ALPHABET) for _ in range(hash_length))
@@ -40,14 +39,14 @@ def generate_hash(existing_hashes: Dict[str, str], hash_length: int) -> str:
             return candidate
 
 
-def build_mappings_from_lines(lines: str) -> Tuple[Dict[str, str], Dict[str, str]]:
+def build_mappings_from_lines(lines: str) -> tuple[dict[str, str], dict[str, str]]:
     """
     Parse mapping file content (text) into two dicts:
       - hash_to_orig: {hash -> original}
       - orig_to_hash: {original -> hash}
     Malformed lines are ignored.
     """
-    hash_to_orig: Dict[str, str] = {}
+    hash_to_orig: dict[str, str] = {}
     for line in lines.splitlines():
         line = line.strip()
         if not line or "=" not in line:
@@ -61,7 +60,7 @@ def build_mappings_from_lines(lines: str) -> Tuple[Dict[str, str], Dict[str, str
     return hash_to_orig, orig_to_hash
 
 
-def serialize_new_mappings(new_pairs: Dict[str, str]) -> str:
+def serialize_new_mappings(new_pairs: dict[str, str]) -> str:
     """Serialize new mappings to append, format: '<HASH> = <Original>\\n'."""
     if not new_pairs:
         return ""
@@ -79,11 +78,11 @@ def _word_boundary_pattern(original: str) -> re.Pattern:
 
 def encode_text(
     text: str,
-    hash_to_orig: Dict[str, str],
-    orig_to_hash: Dict[str, str],
+    hash_to_orig: dict[str, str],
+    orig_to_hash: dict[str, str],
     *,
     hash_length: int = DEFAULT_HASH_LENGTH,
-) -> Tuple[str, Dict[str, str], Dict[str, str]]:
+) -> tuple[str, dict[str, str], dict[str, str]]:
     """
     Encode behavior (updated to your latest spec):
       1) Detect marked tokens [[...]] in the input text.
@@ -98,7 +97,7 @@ def encode_text(
     # Step 1: extract marked tokens
     marked = set(ENCODE_PATTERN.findall(text))
 
-    newly_created: Dict[str, str] = {}
+    newly_created: dict[str, str] = {}
 
     # Step 2: ensure mapping entries for new marked tokens
     for original in marked:
@@ -123,7 +122,7 @@ def encode_text(
 
 def decode_text(
     text: str,
-    hash_to_orig: Dict[str, str],
+    hash_to_orig: dict[str, str],
     *,
     hash_length: int = DEFAULT_HASH_LENGTH,
 ) -> str:

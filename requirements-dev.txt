@@ -4,5 +4,6 @@
 # Linting/Format/Typing (optional, aber empfehlenswert)
 ruff
 black
+httpx
 mypy
 types-requests

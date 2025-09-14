@@ -1,9 +1,10 @@
-import re
-import sys
-import pytest
-import subprocess
 import importlib.util
+import re
+import subprocess
+import sys
 from pathlib import Path
+
+import pytest
 
 SCRIPT_NAME = "anonymizer.py"
 INPUT_FILE = "input.txt"
@@ -12,9 +13,7 @@ MAP_FILE = "mapping.txt"
 
 # load HASH_LENGTH from anonymizer.py
 REPO_ROOT = Path(__file__).resolve().parents[2]  # geht 2 Ebenen hoch: repo-root
-spec = importlib.util.spec_from_file_location(
-    "anonymizer", REPO_ROOT / "backend" / "anonymizer.py"
-)
+spec = importlib.util.spec_from_file_location("anonymizer", REPO_ROOT / "backend" / "anonymizer.py")
 
 anonymizer = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(anonymizer)
@@ -98,9 +97,7 @@ def test_encode_replaces_marked_and_unmarked_words_and_strips_brackets(tmp_path:
 
 def test_encode_handles_phrases_with_spaces(tmp_path: Path):
     copy_script(REPO_ROOT, tmp_path)
-    write(
-        tmp_path, INPUT_FILE, "Heute arbeitet [[Super Nova]] mit Super Nova zusammen."
-    )
+    write(tmp_path, INPUT_FILE, "Heute arbeitet [[Super Nova]] mit Super Nova zusammen.")
     write(tmp_path, MAP_FILE, "")
 
     run_cli(tmp_path, "encode")
@@ -126,9 +123,7 @@ def test_encode_handles_phrases_with_spaces(tmp_path: Path):
 def test_encode_handles_phrases_with_spaces_test_with_hash(tmp_path: Path):
     repo_root = Path.cwd()
     copy_script(repo_root, tmp_path)
-    write(
-        tmp_path, INPUT_FILE, "Heute arbeitet [[Super Nova]] mit Super Nova zusammen."
-    )
+    write(tmp_path, INPUT_FILE, "Heute arbeitet [[Super Nova]] mit Super Nova zusammen.")
     write(tmp_path, MAP_FILE, "")
 
     run_cli(tmp_path, "encode")
