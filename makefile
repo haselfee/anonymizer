@@ -1,38 +1,42 @@
-# Aufruf z.B. make redeploy-frontend
-.PHONY: dev prod up down logs test \
-        build-backend build-frontend \
-        redeploy-backend redeploy-frontend
+# Makefile at repo root
+REG?=localhost
+IMAGE_B?=$(REG)/anonymizer-backend:dev
+IMAGE_F?=$(REG)/anonymizer-frontend:dev
 
-# Development (Hot Reload via compose.dev.yml)
-dev:
-	docker compose -f compose.dev.yml up
+.PHONY: build-backend build-frontend run-backend run-frontend scan-backend scan-frontend k3d-import
 
-# Production (Nginx + FastAPI via compose.prod.yml)
-prod:
-	docker compose -f compose.prod.yml up --build -d
-
-down:
-	docker compose -f compose.dev.yml down || true
-	docker compose -f compose.prod.yml down || true
-
-logs:
-	docker compose -f compose.prod.yml logs -f
-
-test:
-	pytest -q -rxXs
-
-# --- Build only ---
 build-backend:
-	docker build -t anonymizer-backend -f backend/Dockerfile .
+	docker build -f backend/Dockerfile -t $(IMAGE_B) .
 
 build-frontend:
-	docker build -t anonymizer-frontend -f frontend/Dockerfile .
+	docker build -f frontend/Dockerfile -t $(IMAGE_F) .
 
-# --- Redeploy container (manuell, außerhalb von Compose) ---
-redeploy-backend: build-backend
-	docker rm -f backend 2>/dev/null || true
-	docker run -d --name backend --network anonymizer-net -p 8000:8000 anonymizer-backend
+run-backend:
+	docker run --rm -p 8000:8000 --read-only --tmpfs /tmp:rw,nosuid,nodev,size=64m \
+		--security-opt no-new-privileges \
+		--cap-drop ALL \
+		$(IMAGE_B)
 
-redeploy-frontend: build-frontend
-	docker rm -f frontend 2>/dev/null || true
-	docker run -d --name frontend --network anonymizer-net -p 8080:80 anonymizer-frontend
+run-frontend:
+	docker run --rm -p 8080:8080 --read-only --tmpfs /tmp:rw,nosuid,nodev,size=64m \
+		--security-opt no-new-privileges \
+		--cap-drop ALL \
+		$(IMAGE_F)
+
+scan-backend:
+	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+		-v $$HOME/.cache/trivy:/root/.cache/ aquasec/trivy:latest \
+		image --severity CRITICAL,HIGH --ignore-unfixed --scanners vuln,secret,config --no-progress $(IMAGE_B)
+
+scan-frontend:
+	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+		-v $$HOME/.cache/trivy:/root/.cache/ aquasec/trivy:latest \
+		image --severity CRITICAL,HIGH --ignore-unfixed --scanners vuln,secret,config --no-progress $(IMAGE_F)
+
+k3d-import:
+	k3d image import $(IMAGE_B) $(IMAGE_F) -c anonymizer
+
+
+# Optional: 
+# .trivyignore anlegen (z. B. für false positives, 
+# CVEs mit „won’t fix“ in Upstream).
