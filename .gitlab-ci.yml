@@ -1,21 +1,15 @@
-stages: [lint, test]
+stages: [lint, build, test, security]
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-
-cache:
-  key: "pip"
-  paths:
-    - .cache/pip
+  TRIVY_CACHE_DIR: ".trivy-cache"
 
 default:
   image: python:3.12-slim
   before_script:
     - python -V
     - pip install --upgrade pip
-    # Runtime-Reqs (FastAPI etc.) – falls vorhanden im Backend:
-    - if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
-    # Dev-Tools (pytest, pytest-cov, ruff, mypy, httpx, …)
+    # Dev-Tools
     - |
       if [ -f requirements-dev.txt ]; then
         pip install -r requirements-dev.txt
@@ -28,11 +22,39 @@ lint:
   script:
     - ruff check backend --diff
     - ruff format backend --check
+  cache:
+    key:
+      files:
+        - requirements.txt
+        - requirements-dev.txt
+        - pyproject.toml
+        - poetry.lock
+      prefix: "pip"
+    paths:
+      - .cache/pip
+    policy: pull-push
 
 test:
   stage: test
   script:
-    - pytest
+    - |
+      if [ -f backend/requirements.txt ]; then
+        pip install -r backend/requirements.txt
+      fi
+    - pytest --maxfail=1 -q \
+        --cov=backend --cov-report=xml:coverage.xml \
+        --junitxml=junit.xml
+  cache:
+    key:
+      files:
+        - requirements.txt
+        - requirements-dev.txt
+        - pyproject.toml
+        - poetry.lock
+      prefix: "pip"
+    paths:
+      - .cache/pip
+    policy: pull-push
   artifacts:
     when: always
     reports:
@@ -40,3 +62,58 @@ test:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
+
+# Datei-/FS-Scan (nutzt Trivy-Container)
+security:
+  stage: security
+  image: aquasec/trivy:latest
+  before_script: []          # default.before_script überspringen
+  script:
+    - trivy --version
+    - trivy fs --severity CRITICAL,HIGH --ignore-unfixed --no-progress .
+  cache:
+    key: "trivy-cache"
+    paths:
+      - .trivy-cache/
+    policy: pull-push
+
+# Image-Scans (Backend)
+trivy:backend:
+  stage: security
+  image: aquasec/trivy:latest
+  before_script: []
+  script:
+    - trivy --version
+    - trivy image --severity CRITICAL,HIGH --ignore-unfixed --no-progress "$BACKEND_IMAGE"
+    - trivy image --format cyclonedx --output backend-sbom.cdx.json "$BACKEND_IMAGE"
+  artifacts:
+    when: always
+    paths:
+      - backend-sbom.cdx.json
+    reports:
+      cyclonedx: backend-sbom.cdx.json
+  allow_failure: true
+
+# Image-Scans (Frontend)
+trivy:frontend:
+  stage: security
+  image: aquasec/trivy:latest
+  before_script: []
+  script:
+    - trivy image --severity CRITICAL,HIGH --ignore-unfixed --no-progress "$FRONTEND_IMAGE"
+    - trivy image --format cyclonedx --output frontend-sbom.cdx.json "$FRONTEND_IMAGE"
+  artifacts:
+    when: always
+    paths:
+      - frontend-sbom.cdx.json
+    reports:
+      cyclonedx: frontend-sbom.cdx.json
+  allow_failure: true
+
+# Kurzbegründung:
+# before_script: [] in den Trivy-Jobs verhindert das (unnötige) 
+# Python-Setup und spart Zeit.
+# cache.policy: pull-push + key.files → gemeinsam genutzter, 
+# automatisch invalidierter Pip-Cache.
+# pytest --cov ... --cov-report=xml:coverage.xml erzeugt die 
+# von GitLab erwartete coverage.xml.
