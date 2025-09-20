@@ -10,9 +10,43 @@ backend:
   replicas: 1
   port: 8000            # Container-Port (wie bisher genutzt)
   servicePort: 80       # Externer Service-Port (separat steuerbar)
+
   resources:
     requests: { cpu: "50m", memory: "128Mi" }
     limits:   { cpu: "500m", memory: "512Mi" }
+
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  seccompProfile: RuntimeDefault
+
+  probes:
+    path: /health
+    startup:
+      enabled: true
+      failureThreshold: 30
+      periodSeconds: 1
+      timeoutSeconds: 1
+    readiness:
+      initialDelaySeconds: 2
+      periodSeconds: 5
+      timeoutSeconds: 2
+      failureThreshold: 3
+    liveness:
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+
+  tmpfs:
+    enabled: true
+    mounts:
+      - path: /tmp
+        sizeLimit: 64Mi
+        medium: Memory
 
 frontend:
   repository: anonymizer-frontend
@@ -28,11 +62,43 @@ frontend:
     requests: { cpu: "50m", memory: "64Mi" }
     limits:   { cpu: "300m", memory: "256Mi" }
 
+  runAsUser: 101        # nginx-unprivileged Defaults
+  runAsGroup: 101
+  fsGroup: 101
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  seccompProfile: RuntimeDefault
+
+  probes:
+    path: /
+    readiness:
+      initialDelaySeconds: 5
+      periodSeconds: 5
+    liveness:
+      initialDelaySeconds: 10
+      periodSeconds: 10
+
+  tmpfs:
+    enabled: true
+    mounts:
+      - path: /var/cache/nginx       # häufig benötigt
+        sizeLimit: 64Mi
+        medium: Memory
+      - path: /var/run               # pid/socket
+        sizeLimit: 16Mi
+        medium: Memory
+      - path: /tmp
+        sizeLimit: 32Mi
+        medium: Memory
+
 ingress:
   enabled: false
   className: ""
   host: anonymizer.local
 
+podSecurity:
+  automountServiceAccountToken: false
 
 
-
+  

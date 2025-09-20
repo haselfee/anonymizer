@@ -14,3 +14,4 @@ spec:
       port: {{ .Values.frontend.servicePort | default 80 }}   # Service-Port (extern)
       targetPort: http                                        # --> Container-Port (benannt)
       protocol: TCP
+      appProtocol: http
