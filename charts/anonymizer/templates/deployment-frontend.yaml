@@ -1,3 +1,4 @@
+# templates/deployment-frontend.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -32,15 +33,27 @@ spec:
           image: "{{ $repo }}:{{ $tag }}"
           {{- end }}
           imagePullPolicy: {{ .Values.frontend.pullPolicy | default "IfNotPresent" }}
-          ports: [ { containerPort: {{ .Values.frontend.port | default 80 }} } ]
+
+          # Benannter Container-Port
+          ports:
+            - name: http
+              containerPort: {{ .Values.frontend.containerPort | default ( .Values.frontend.port | default 8080 ) }}
+              protocol: TCP
+
           readinessProbe:
-            httpGet: { path: "/", port: {{ .Values.frontend.port | default 80 }} }
+            httpGet:
+              path: /
+              port: http     # <-- benannter Port
             initialDelaySeconds: 5
             periodSeconds: 5
+
           livenessProbe:
-            httpGet: { path: "/", port: {{ .Values.frontend.port | default 80 }} }
+            httpGet:
+              path: /
+              port: http     # <-- benannter Port
             initialDelaySeconds: 10
             periodSeconds: 10
+
           {{- with .Values.frontend.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

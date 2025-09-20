@@ -8,7 +8,8 @@ backend:
   tag: "1.0.0"
   pullPolicy: IfNotPresent
   replicas: 1
-  port: 8000
+  port: 8000            # Container-Port (wie bisher genutzt)
+  servicePort: 80       # Externer Service-Port (separat steuerbar)
   resources:
     requests: { cpu: "50m", memory: "128Mi" }
     limits:   { cpu: "500m", memory: "512Mi" }
@@ -18,7 +19,11 @@ frontend:
   tag: "1.0.0"
   pullPolicy: IfNotPresent
   replicas: 1
-  port: 8080
+  # Container-Port (nginx-unprivileged nutzt standardmäßig 8080; dein Image evtl. 80)
+  containerPort: 8080
+  # Service-Port bleibt 80 für „normales“ Routing
+  servicePort: 80
+
   resources:
     requests: { cpu: "50m", memory: "64Mi" }
     limits:   { cpu: "300m", memory: "256Mi" }
@@ -27,3 +32,7 @@ ingress:
   enabled: false
   className: ""
   host: anonymizer.local
+
+
+
+

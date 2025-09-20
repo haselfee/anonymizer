@@ -22,6 +22,19 @@ spec:
         - name: {{ .name }}
       {{- end }}
       {{- end }}
+
+      # Pod-level security defaults (defense-in-depth)
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ .Values.backend.runAsUser | default 10001 }}
+        runAsGroup: {{ .Values.backend.runAsGroup | default 10001 }}
+        fsGroup: {{ .Values.backend.fsGroup | default 10001 }}
+        seccompProfile: { type: RuntimeDefault }
+
+      volumes:
+        - name: tmp
+          emptyDir: { medium: Memory, sizeLimit: "64Mi" }
+
       containers:
         - name: backend
           {{- $repo := .Values.backend.repository -}}
@@ -32,15 +45,41 @@ spec:
           image: "{{ $repo }}:{{ $tag }}"
           {{- end }}
           imagePullPolicy: {{ .Values.backend.pullPolicy | default "IfNotPresent" }}
-          ports: [ { containerPort: {{ .Values.backend.port | default 8000 }} } ]
+
+          ports:
+            - name: http
+              containerPort: {{ .Values.backend.port | default 8000 }}
+              protocol: TCP
+
+          # Container-level hardening
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+          # Probes – robust + benannter Port
+          startupProbe:
+            httpGet: { path: /health, port: http }
+            failureThreshold: 30        # ~30 * 1s = 30s Startup-Zeit
+            periodSeconds: 1
+            timeoutSeconds: 1
           readinessProbe:
-            httpGet: { path: /health, port: {{ .Values.backend.port | default 8000 }} }
-            initialDelaySeconds: 5
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 2
             periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
           livenessProbe:
-            httpGet: { path: /health, port: {{ .Values.backend.port | default 8000 }} }
+            httpGet: { path: /health, port: http }
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
           {{- with .Values.backend.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

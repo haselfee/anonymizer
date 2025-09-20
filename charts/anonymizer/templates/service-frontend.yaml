@@ -1,49 +1,16 @@
-apiVersion: apps/v1
-kind: Deployment
+# templates/service-frontend.yaml
+apiVersion: v1
+kind: Service
 metadata:
   name: {{ include "anonymizer.fullname" . }}-frontend
   labels: {{- include "anonymizer.labels" . | nindent 4 }}
 spec:
-  revisionHistoryLimit: {{ .Values.revisionHistoryLimit | default 2 }}
-  replicas: {{ .Values.frontend.replicas | default 1 }}
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+  type: ClusterIP
   selector:
-    matchLabels: { app: {{ include "anonymizer.fullname" . }}, tier: frontend }
-  template:
-    metadata:
-      labels: { app: {{ include "anonymizer.fullname" . }}, tier: frontend }
-    spec:
-      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 5 }}
-      {{- if .Values.image.pullSecrets }}
-      imagePullSecrets:
-      {{- range .Values.image.pullSecrets }}
-        - name: {{ .name }}
-      {{- end }}
-      {{- end }}
-      containers:
-        - name: frontend
-          {{- $repo := .Values.frontend.repository -}}
-          {{- $tag  := (.Values.frontend.tag | default "latest") -}}
-          {{- if .Values.image.registry }}
-          image: "{{ .Values.image.registry }}/{{ $repo }}:{{ $tag }}"
-          {{- else }}
-          image: "{{ $repo }}:{{ $tag }}"
-          {{- end }}
-          imagePullPolicy: {{ .Values.frontend.pullPolicy | default "IfNotPresent" }}
-          ports: [{ containerPort: {{ .Values.frontend.port | default 80 }} }]
-          readinessProbe:
-            httpGet: { path: "/", port: {{ .Values.frontend.port | default 80 }} }
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          livenessProbe:
-            httpGet: { path: "/", port: {{ .Values.frontend.port | default 80 }} }
-            initialDelaySeconds: 10
-            periodSeconds: 10
-          {{- with .Values.frontend.resources }}
-          resources:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+    app: {{ include "anonymizer.fullname" . }}
+    tier: frontend
+  ports:
+    - name: http
+      port: {{ .Values.frontend.servicePort | default 80 }}   # Service-Port (extern)
+      targetPort: http                                        # --> Container-Port (benannt)
+      protocol: TCP

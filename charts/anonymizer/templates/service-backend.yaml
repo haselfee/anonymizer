@@ -8,5 +8,7 @@ spec:
   selector: { app: {{ include "anonymizer.fullname" . }}, tier: backend }
   ports:
     - name: http
-      port: {{ .Values.backend.servicePort | default (.Values.backend.port | default 8000) }}
-      targetPort: {{ .Values.backend.port | default 8000 }}
+      port: {{ .Values.backend.servicePort | default ( .Values.backend.port | default 8000 ) }}  # Service-Port
+      targetPort: http            # <— benannter Container-Port aus Deployment
+      protocol: TCP
+      appProtocol: http           # optional, aber hilfreich für Ingress/Gateways
