@@ -1,28 +1,20 @@
-# 1) Build stage
-FROM node:20-alpine AS build
+# frontend/Dockerfile
+# --- Stage 1: build -----------------------------------------------------------
+FROM node:22-slim AS build
 WORKDIR /app
-
-# Install deps
-COPY frontend/package*.json ./
+ENV CI=1
+COPY frontend/package*.json /app/
 RUN npm ci
+COPY frontend/ /app/
+# Falls Angular CLI lokal: npx verwenden
+RUN npx ng build --configuration=production
 
-# Copy sources & build
-COPY frontend/ .
-# Build and normalize Angular output to /app/www
-# (Angular >=17: dist/<project>/browser/, ältere: dist/<project>/)
-RUN npm run build && \
-    PROJECT_NAME="$(node -e "const j=require('./angular.json');process.stdout.write(j.defaultProject || Object.keys(j.projects||{})[0] || '');")" && \
-    OUTDIR="$(node -e "const j=require('./angular.json');const p=j.projects?.[process.argv[1]];process.stdout.write(p?.architect?.build?.options?.outputPath || 'dist');" "$PROJECT_NAME")" && \
-    mkdir -p /app/www && \
-    if [ -d "$OUTDIR/browser" ]; then cp -r "$OUTDIR/browser/"* /app/www/; \
-    elif [ -d "$OUTDIR/$PROJECT_NAME/browser" ]; then cp -r "$OUTDIR/$PROJECT_NAME/browser/"* /app/www/; \
-    elif [ -d "$OUTDIR/$PROJECT_NAME" ]; then cp -r "$OUTDIR/$PROJECT_NAME/"* /app/www/; \
-    else cp -r "$OUTDIR/"* /app/www/; fi
-
-# 2) Run stage
-FROM nginx:alpine
-# Optional: SPA-Routing + /api-Proxy (falls gewünscht):
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/www/ /usr/share/nginx/html/
+# --- Stage 2: runtime (non-root nginx) ---------------------------------------
+FROM nginxinc/nginx-unprivileged:stable
+# Default listen: 8080 (non-root)
+COPY --from=build /app/dist/ /usr/share/nginx/html/
+# Optional: eigene nginx.conf mit security headers
+# COPY ops/nginx/nginx.conf /etc/nginx/nginx.conf
 EXPOSE 8080
-CMD ["nginx", "-g", "daemon off;"]
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+  CMD wget -q -O /dev/null http://127.0.0.1:8080/ || exit 1
