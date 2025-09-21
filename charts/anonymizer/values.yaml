@@ -1,7 +1,8 @@
 image:
-  registry: gitlab.local:5050/<group>/<project>
+  registry: vmgitlab:5050
+  groupProject: workaholics/anonymizer
   pullSecrets:
-    - name: gitlab-regcred
+    - name: vmgitlab-regcred
 
 backend:
   repository: anonymizer-backend
@@ -101,4 +102,3 @@ podSecurity:
   automountServiceAccountToken: false
 
 
-  

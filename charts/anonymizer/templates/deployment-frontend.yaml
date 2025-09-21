@@ -25,15 +25,8 @@ spec:
       {{- end }}
       containers:
         - name: frontend
-          {{- $repo := .Values.frontend.repository -}}
-          {{- $tag  := (.Values.frontend.tag | default "latest") -}}
-          {{- if .Values.image.registry }}
-          image: "{{ .Values.image.registry }}/{{ $repo }}:{{ $tag }}"
-          {{- else }}
-          image: "{{ $repo }}:{{ $tag }}"
-          {{- end }}
+          image: "{{ include "anonymizer.image" (dict "Values" .Values "repository" .Values.frontend.repository "tag" .Values.frontend.tag) }}"
           imagePullPolicy: {{ .Values.frontend.pullPolicy | default "IfNotPresent" }}
-
           # Benannter Container-Port
           ports:
             - name: http

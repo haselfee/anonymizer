@@ -2,85 +2,100 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "anonymizer.fullname" . }}-backend
-  labels: {{- include "anonymizer.labels" . | nindent 4 }}
+  labels:
+    {{- include "anonymizer.labels" . | nindent 4 }}
 spec:
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit | default 2 }}
   replicas: {{ .Values.backend.replicas | default 1 }}
   strategy:
     type: RollingUpdate
-    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
-    matchLabels: { app: {{ include "anonymizer.fullname" . }}, tier: backend }
+    matchLabels:
+      app: "{{ include "anonymizer.fullname" . }}"
+      tier: backend
   template:
     metadata:
-      labels: { app: {{ include "anonymizer.fullname" . }}, tier: backend }
+      labels:
+        app: "{{ include "anonymizer.fullname" . }}"
+        tier: backend
     spec:
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 5 }}
       {{- if .Values.image.pullSecrets }}
       imagePullSecrets:
-      {{- range .Values.image.pullSecrets }}
+        {{- range .Values.image.pullSecrets }}
         - name: {{ .name }}
-      {{- end }}
+        {{- end }}
       {{- end }}
 
-      # Pod-level security defaults (defense-in-depth)
       securityContext:
         runAsNonRoot: true
         runAsUser: {{ .Values.backend.runAsUser | default 10001 }}
         runAsGroup: {{ .Values.backend.runAsGroup | default 10001 }}
         fsGroup: {{ .Values.backend.fsGroup | default 10001 }}
-        seccompProfile: { type: RuntimeDefault }
+        seccompProfile:
+          type: RuntimeDefault
 
       volumes:
-        - name: tmp
-          emptyDir: { medium: Memory, sizeLimit: "64Mi" }
+      - name: tmp
+        emptyDir:
+          medium: Memory
+          sizeLimit: "64Mi"
 
       containers:
-        - name: backend
-          {{- $repo := .Values.backend.repository -}}
-          {{- $tag  := (.Values.backend.tag | default "latest") -}}
-          {{- if .Values.image.registry }}
-          image: "{{ .Values.image.registry }}/{{ $repo }}:{{ $tag }}"
-          {{- else }}
-          image: "{{ $repo }}:{{ $tag }}"
-          {{- end }}
-          imagePullPolicy: {{ .Values.backend.pullPolicy | default "IfNotPresent" }}
+      - name: backend
+        # orientiert sich an _helpers.tpl
+        image: "{{ include "anonymizer.image" (dict "Values" .Values "repository" .Values.backend.repository "tag" .Values.backend.tag) }}"
 
-          ports:
-            - name: http
-              containerPort: {{ .Values.backend.port | default 8000 }}
-              protocol: TCP
+        # funktioniert orientiert sich aber nicht an _helpers.tpl
+        #image: "{{ .Values.image.registry }}/{{ .Values.image.groupProject }}/{{ .Values.backend.repository }}:{{ default "latest" .Values.backend.tag }}"
 
-          # Container-level hardening
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities: { drop: ["ALL"] }
+        imagePullPolicy: {{ .Values.backend.pullPolicy | default "IfNotPresent" }}
 
-          volumeMounts:
-            - name: tmp
-              mountPath: /tmp
+        ports:
+        - name: http
+          containerPort: {{ .Values.backend.port | default 8000 }}
+          protocol: TCP
 
-          # Probes – robust + benannter Port
-          startupProbe:
-            httpGet: { path: /health, port: http }
-            failureThreshold: 30        # ~30 * 1s = 30s Startup-Zeit
-            periodSeconds: 1
-            timeoutSeconds: 1
-          readinessProbe:
-            httpGet: { path: /health, port: http }
-            initialDelaySeconds: 2
-            periodSeconds: 5
-            timeoutSeconds: 2
-            failureThreshold: 3
-          livenessProbe:
-            httpGet: { path: /health, port: http }
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 2
-            failureThreshold: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
 
-          {{- with .Values.backend.resources }}
-          resources:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+          failureThreshold: 30
+          periodSeconds: 1
+          timeoutSeconds: 1
+
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 2
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
+
+        {{- with .Values.backend.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
