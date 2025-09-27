@@ -9,13 +9,19 @@ select = [
   "UP",           # pyupgrade
   "B",            # bugbear
 ]
+
+extend-select = ["I"]            # isort-Regeln aktivieren
+
 ignore = [
   "E501",         # Zeilenlänge, wir managen über line-length
 ]
 
-[tool.ruff]
-extend-select = ["I"]  # isort-Regeln aktiv (falls nicht schon)
-
-[tool.ruff.isort]
+[lint.isort]
 known-first-party = ["api_server", "anonymizer", "anonymizer_core", "backend"]
+
+[format]
+line-ending = "lf"
+quote-style = "double"
+
+
 
