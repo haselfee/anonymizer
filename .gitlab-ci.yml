@@ -70,38 +70,60 @@ test:backend:
       junit: pytest-junit.xml
     paths:
       - .pytest_cache/
-
 variables:
-  # BACKEND_IMAGE: "$CI_REGISTRY_IMAGE/anonymizer-backend:1.0.0"
-  # FRONTEND_IMAGE: "$CI_REGISTRY_IMAGE/anonymizer-frontend:1.0.0"
   BACKEND_IMAGE:  "vmgitlab:5050/workaholics/anonymizer/anonymizer-backend:1.0.0"
   FRONTEND_IMAGE: "vmgitlab:5050/workaholics/anonymizer/anonymizer-frontend:1.0.0"
   TRIVY_CACHE_DIR: .trivy-cache
-  # Für private GitLab-Registry:
   TRIVY_USERNAME: "gitlab-ci-token"
   TRIVY_PASSWORD: "$CI_JOB_TOKEN"
 
-trivy:backend:
+.trivy-template:
   stage: security
-  image: aquasec/trivy:latest
+  image: docker:26-cli
+  services:
+    - name: docker:26-dind
+      command: ["--tls=false"]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+  before_script:
+    - mkdir -p "$TRIVY_CACHE_DIR"
+
+trivy:backend:
+  extends: .trivy-template
   script:
-    - --version
-    - image --severity CRITICAL,HIGH --ignore-unfixed --no-progress "$BACKEND_IMAGE"
-    - image --format cyclonedx --output backend-sbom.cdx.json "$BACKEND_IMAGE"
+    - docker run --rm
+        -e TRIVY_USERNAME -e TRIVY_PASSWORD
+        -v "$PWD/$TRIVY_CACHE_DIR:/root/.cache/"
+        aquasec/trivy:latest
+        image --severity CRITICAL,HIGH --ignore-unfixed --no-progress "$BACKEND_IMAGE"
+    - docker run --rm
+        -e TRIVY_USERNAME -e TRIVY_PASSWORD
+        -v "$PWD/$TRIVY_CACHE_DIR:/root/.cache/"
+        -v "$PWD:/work"
+        -w /work
+        aquasec/trivy:latest
+        image --format cyclonedx --output backend-sbom.cdx.json "$BACKEND_IMAGE"
   artifacts:
     when: always
     paths: [ backend-sbom.cdx.json ]
   allow_failure: true
 
 trivy:frontend:
-  stage: security
-  image:
-    name: aquasec/trivy:latest
+  extends: .trivy-template
   script:
-    - --version
-    - trivy image --severity CRITICAL,HIGH --ignore-unfixed --no-progress "$FRONTEND_IMAGE"
-    - trivy image --format cyclonedx --output frontend-sbom.cdx.json "$FRONTEND_IMAGE"
+    - docker run --rm
+        -e TRIVY_USERNAME -e TRIVY_PASSWORD
+        -v "$PWD/$TRIVY_CACHE_DIR:/root/.cache/"
+        aquasec/trivy:latest
+        image --severity CRITICAL,HIGH --ignore-unfixed --no-progress "$FRONTEND_IMAGE"
+    - docker run --rm
+        -e TRIVY_USERNAME -e TRIVY_PASSWORD
+        -v "$PWD/$TRIVY_CACHE_DIR:/root/.cache/"
+        -v "$PWD:/work"
+        -w /work
+        aquasec/trivy:latest
+        image --format cyclonedx --output frontend-sbom.cdx.json "$FRONTEND_IMAGE"
   artifacts:
     when: always
-    paths: [ backend-sbom.cdx.json ]
+    paths: [ frontend-sbom.cdx.json ]
   allow_failure: true
