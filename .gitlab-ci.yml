@@ -75,11 +75,16 @@ variables:
   BACKEND_IMAGE: "$CI_REGISTRY_IMAGE/anonymizer-backend:1.0.0"
   FRONTEND_IMAGE: "$CI_REGISTRY_IMAGE/anonymizer-frontend:1.0.0"
   TRIVY_CACHE_DIR: .trivy-cache
+  # Zugang zur GitLab Container Registry:
+  TRIVY_USERNAME: "gitlab-ci-token"
+  TRIVY_PASSWORD: "$CI_JOB_TOKEN"
 
 trivy:backend:
   stage: security
   image: aquasec/trivy:latest
+  entrypoint: [""]                 # <— Shell wieder aktivieren
   script:
+    - trivy --version
     - trivy image --severity CRITICAL,HIGH --ignore-unfixed --no-progress "$BACKEND_IMAGE"
     - trivy image --format cyclonedx --output backend-sbom.cdx.json "$BACKEND_IMAGE"
   artifacts:
@@ -91,7 +96,9 @@ trivy:backend:
 trivy:frontend:
   stage: security
   image: aquasec/trivy:latest
+  entrypoint: [""]                 # <— Shell wieder aktivieren
   script:
+    - trivy --version
     - trivy image --severity CRITICAL,HIGH --ignore-unfixed --no-progress "$FRONTEND_IMAGE"
     - trivy image --format cyclonedx --output frontend-sbom.cdx.json "$FRONTEND_IMAGE"
   artifacts:
