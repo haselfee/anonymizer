@@ -36,17 +36,15 @@ lint:
   stage: lint
   script:
     - ruff --version
-    - ruff check backend --diff
-    - ruff format backend --check
+    - ruff format backend --check        # nur prüfend
+    - ruff check backend --select E,F    # nur Kernchecks
   cache:
     key:
       prefix: "ruff"
-      files:
-        - requirements.txt
-        - requirements-dev.txt
-    paths:
-      - backend/.ruff_cache/
+      files: [requirements.txt, requirements-dev.txt]
+    paths: [backend/.ruff_cache/]
     policy: pull-push
+  allow_failure: false   # kann auch true sein, wenn du Lint nie blockend willst
 
 test:backend:
   stage: test

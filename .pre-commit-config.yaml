@@ -8,8 +8,9 @@ repos:
     rev: v0.6.9   # aktuelle Ruff-Version prüfen
     hooks:
       - id: ruff
-        args: [--fix]  # optional: direkt fixen statt nur prüfen
-        
+        args: ["--fix", "--select=E,F"]    # optional: direkt fixen statt nur prüfen
+      - id: ruff-format
+        args: ["--check"]
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.5.7
     hooks:

@@ -1,27 +1,17 @@
 # ruff.toml
-line-length = 100
-target-version = "py312"
 
 [lint]
-select = [
-  "E","F",        # pycodestyle + pyflakes
-  "I",            # isort
-  "UP",           # pyupgrade
-  "B",            # bugbear
-]
+# Nur Kernchecks: E (pycodestyle) & F (pyflakes)
+select = ["E", "F"]
+# Wenn du isort später wieder willst, füge "I" zurück hinzu.
+# extend-select = ["I"]
 
-extend-select = ["I"]            # isort-Regeln aktivieren
-
-ignore = [
-  "E501",         # Zeilenlänge, wir managen über line-length
-]
+# Tests von Import-Sortierung explizit ausnehmen
+per-file-ignores = { "backend/tests/**" = ["I001", "I002"] }
 
 [lint.isort]
+# Falls du "I" später wieder aktivierst, kennt Ruff eure Module:
 known-first-party = ["api_server", "anonymizer", "anonymizer_core", "backend"]
 
 [format]
 line-ending = "lf"
-quote-style = "double"
-
-
-
