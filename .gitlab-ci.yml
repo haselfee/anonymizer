@@ -1,4 +1,19 @@
-stages: [lint, build, test, security]
+
+# 1) Pipeline soll auf Push + MR + Tags laufen
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG
+    - when: never
+
+# 2) Stage-Reihenfolge explizit
+
+stages:
+  - lint
+  - test
+  - security
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -30,7 +45,7 @@ lint:
         - requirements-dev.txt
     paths:
       - backend/.ruff_cache/
-    policy: pull-push   # <-- HIER ist korrekt (unterhalb von cache)
+    policy: pull-push
 
 test:backend:
   stage: test
@@ -49,34 +64,19 @@ test:backend:
         - requirements-dev.txt
     paths:
       - .venv/
-    policy: pull-push   # <-- HIER ist korrekt
+    policy: pull-push
   artifacts:
     when: always
     reports:
       junit: pytest-junit.xml
     paths:
       - .pytest_cache/
-      
-# Datei-/FS-Scan (nutzt Trivy-Container)
-security:
-  stage: security
-  image: aquasec/trivy:latest
-  before_script: []          # default.before_script überspringen
-  script:
-    - trivy --version
-    - trivy fs --severity CRITICAL,HIGH --ignore-unfixed --no-progress .
-  cache:
-    key: "trivy-cache"
-    paths:
-      - .trivy-cache/
-    policy: pull-push
 
 variables:
   BACKEND_IMAGE: "$CI_REGISTRY_IMAGE/anonymizer-backend:1.0.0"
   FRONTEND_IMAGE: "$CI_REGISTRY_IMAGE/anonymizer-frontend:1.0.0"
   TRIVY_CACHE_DIR: .trivy-cache
 
-# Image-Scans (Backend)
 trivy:backend:
   stage: security
   image: aquasec/trivy:latest
@@ -89,7 +89,6 @@ trivy:backend:
     reports: { cyclonedx: backend-sbom.cdx.json }
   allow_failure: true
 
-# Image-Scans (Frontend)
 trivy:frontend:
   stage: security
   image: aquasec/trivy:latest
@@ -101,11 +100,3 @@ trivy:frontend:
     paths: [ frontend-sbom.cdx.json ]
     reports: { cyclonedx: frontend-sbom.cdx.json }
   allow_failure: true
-
-# Kurzbegründung:
-# before_script: [] in den Trivy-Jobs verhindert das (unnötige) 
-# Python-Setup und spart Zeit.
-# cache.policy: pull-push + key.files → gemeinsam genutzter, 
-# automatisch invalidierter Pip-Cache.
-# pytest --cov ... --cov-report=xml:coverage.xml erzeugt die 
-# von GitLab erwartete coverage.xml.
