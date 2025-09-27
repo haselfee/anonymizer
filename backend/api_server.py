@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-
-import anonymizer  # package-relative import aus backend.anonymizer
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+
+import anonymizer  # package-relative import aus backend.anonymizer
 
 app = FastAPI(title="Anonymizer API")
 
@@ -53,7 +54,9 @@ def encode(req: TextIn) -> TextOut:
 
 @app.post("/decode", response_model=TextOut)
 def decode(req: TextIn) -> TextOut:
-    forward, reverse = anonymizer.load_mapping(MAP_PATH)  # ORIGINAL->TOKEN, TOKEN->ORIGINAL
+    forward, reverse = anonymizer.load_mapping(
+        MAP_PATH
+    )  # ORIGINAL->TOKEN, TOKEN->ORIGINAL
     # optionales Mapping des Clients mergen (ORIGINAL->TOKEN)
     if req.mapping:
         for orig, tok in req.mapping.items():

@@ -46,7 +46,9 @@ def load_mapping(path: Path) -> tuple[dict[str, str], dict[str, str]]:
 
 def save_mapping(path: Path, forward: dict[str, str]) -> None:
     # Schreibe konsistent als "TOKEN = ORIGINAL", sortiert nach ORIGINAL für Stabilität
-    items = sorted(((tok, orig) for orig, tok in forward.items()), key=lambda x: x[1].lower())
+    items = sorted(
+        ((tok, orig) for orig, tok in forward.items()), key=lambda x: x[1].lower()
+    )
     with path.open("w", encoding="utf-8") as f:
         for tok, orig in items:
             f.write(f"{tok} = {orig}\n")
@@ -123,7 +125,9 @@ def main(argv: list[str]) -> int:
             return 1
         src = in_path.read_text(encoding="utf-8")
         out, forward2 = encode_text(src, forward)
-        in_path.write_text(out, encoding="utf-8")  # IN PLACE schreiben (Test erwartet das)
+        in_path.write_text(
+            out, encoding="utf-8"
+        )  # IN PLACE schreiben (Test erwartet das)
         save_mapping(map_path, forward2)
         return 0
 
