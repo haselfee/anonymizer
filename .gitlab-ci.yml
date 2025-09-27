@@ -71,7 +71,7 @@ test:backend:
     paths:
       - .pytest_cache/
 variables:
-  BACKEND_IMAGE:  "vmgitlab:5050/workaholics/anonymizer/anonymizer-backend:1.0.0"
+  BACKEND_IMAGE:  "vmgitlab:5050/workaholics/anonymizer/anonymizer-backend:1.0.1"
   FRONTEND_IMAGE: "vmgitlab:5050/workaholics/anonymizer/anonymizer-frontend:1.0.0"
   TRIVY_CACHE_DIR: .trivy-cache
   TRIVY_USERNAME: "gitlab-ci-token"
