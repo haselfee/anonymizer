@@ -71,8 +71,6 @@ test:backend:
     paths:
       - .pytest_cache/
 
-
-
 variables:
   # BACKEND_IMAGE: "$CI_REGISTRY_IMAGE/anonymizer-backend:1.0.0"
   # FRONTEND_IMAGE: "$CI_REGISTRY_IMAGE/anonymizer-frontend:1.0.0"
@@ -85,29 +83,25 @@ variables:
 
 trivy:backend:
   stage: security
-  image:
-    name: aquasec/trivy:latest
-    entrypoint: [""]           # <- Shell zurückholen; überschreibt ENTRYPOINT ["trivy"]
+  image: aquasec/trivy:latest
   script:
-    - trivy --version
-    - trivy image --severity CRITICAL,HIGH --ignore-unfixed --no-progress "$BACKEND_IMAGE"
-    - trivy image --format cyclonedx --output backend-sbom.cdx.json "$BACKEND_IMAGE"
+    - --version
+    - image --severity CRITICAL,HIGH --ignore-unfixed --no-progress "$BACKEND_IMAGE"
+    - image --format cyclonedx --output backend-sbom.cdx.json "$BACKEND_IMAGE"
   artifacts:
     when: always
-    paths:
-      - backend-sbom.cdx.json
+    paths: [ backend-sbom.cdx.json ]
   allow_failure: true
 
 trivy:frontend:
   stage: security
   image:
     name: aquasec/trivy:latest
-    entrypoint: [""]
   script:
+    - --version
     - trivy image --severity CRITICAL,HIGH --ignore-unfixed --no-progress "$FRONTEND_IMAGE"
     - trivy image --format cyclonedx --output frontend-sbom.cdx.json "$FRONTEND_IMAGE"
   artifacts:
     when: always
-    paths:
-      - frontend-sbom.cdx.json
+    paths: [ backend-sbom.cdx.json ]
   allow_failure: true
