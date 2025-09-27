@@ -4,6 +4,8 @@
 # Linting/Format/Typing (optional, aber empfehlenswert)
 ruff
 black
+pytest
+pytest-asyncio
 httpx
 mypy
 types-requests

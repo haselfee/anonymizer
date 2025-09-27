@@ -44,11 +44,16 @@ test:backend:
   stage: test
   image: python:3.12-slim
   before_script:
-    - python -m venv .venv && . .venv/bin/activate
+    - python -m venv .venv
+    - . .venv/bin/activate
     - pip install -U pip
-    - pip install -r requirements.txt -r requirements-dev.txt
+    - pip install -r requirements.txt
+    - if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
   script:
-    - pytest -q
+    # Stelle sicher, dass Python deinen Code findet:
+    - export PYTHONPATH=backend
+    # Starte Tests aus dem Repo-Root gegen das Backend-Test-Verzeichnis
+    - pytest -q backend/tests
   cache:
     key:
       prefix: "pip"
