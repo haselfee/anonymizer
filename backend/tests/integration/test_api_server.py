@@ -1,6 +1,8 @@
-from pathlib import Path
-from fastapi.testclient import TestClient
 import importlib
+from pathlib import Path
+
+from fastapi.testclient import TestClient
+
 
 def test_encode_decode_endpoints(tmp_path: Path, monkeypatch):
     # Work in a temp CWD so mapping.txt is isolated
