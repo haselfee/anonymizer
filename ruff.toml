@@ -12,3 +12,10 @@ select = [
 ignore = [
   "E501",         # Zeilenlänge, wir managen über line-length
 ]
+
+[tool.ruff]
+extend-select = ["I"]  # isort-Regeln aktiv (falls nicht schon)
+
+[tool.ruff.isort]
+known-first-party = ["api_server", "anonymizer", "anonymizer_core", "backend"]
+
