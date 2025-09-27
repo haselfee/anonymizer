@@ -53,7 +53,8 @@ test:backend:
     # Stelle sicher, dass Python deinen Code findet:
     - export PYTHONPATH=backend
     # Starte Tests aus dem Repo-Root gegen das Backend-Test-Verzeichnis
-    - pytest -q backend/tests
+    # pytest.ini liefert die Coverage-Flags; wir ergänzen nur den JUnit-Report
+    - pytest backend/tests -q --junit-xml=pytest-junit.xml
   cache:
     key:
       prefix: "pip"

@@ -7,5 +7,6 @@ black
 pytest
 pytest-asyncio
 httpx
+pytest-cov
 mypy
 types-requests
