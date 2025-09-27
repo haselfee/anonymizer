@@ -107,7 +107,8 @@ def encode_text(
             orig_to_hash[original] = new_hash
             newly_created[new_hash] = original
 
-    # Step 3: replace using full mapping (apply longest originals first to avoid partial overlaps)
+    # Step 3: replace using full mapping (apply longest originals first to avoid
+    # partial overlaps)
     new_text = text
     for original in sorted(orig_to_hash.keys(), key=len, reverse=True):
         h = orig_to_hash[original]
