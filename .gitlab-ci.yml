@@ -35,6 +35,7 @@ default:
 lint:
   stage: lint
   script:
+    - ruff --version
     - ruff check backend --diff
     - ruff format backend --check
   cache:
