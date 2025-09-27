@@ -71,38 +71,43 @@ test:backend:
     paths:
       - .pytest_cache/
 
+
+
 variables:
-  BACKEND_IMAGE: "$CI_REGISTRY_IMAGE/anonymizer-backend:1.0.0"
-  FRONTEND_IMAGE: "$CI_REGISTRY_IMAGE/anonymizer-frontend:1.0.0"
+  # BACKEND_IMAGE: "$CI_REGISTRY_IMAGE/anonymizer-backend:1.0.0"
+  # FRONTEND_IMAGE: "$CI_REGISTRY_IMAGE/anonymizer-frontend:1.0.0"
+  BACKEND_IMAGE:  "vmgitlab:5050/workaholics/anonymizer/anonymizer-backend:1.0.0"
+  FRONTEND_IMAGE: "vmgitlab:5050/workaholics/anonymizer/anonymizer-frontend:1.0.0"
   TRIVY_CACHE_DIR: .trivy-cache
-  # Zugang zur GitLab Container Registry:
+  # Für private GitLab-Registry:
   TRIVY_USERNAME: "gitlab-ci-token"
   TRIVY_PASSWORD: "$CI_JOB_TOKEN"
 
 trivy:backend:
   stage: security
-  image: aquasec/trivy:latest
-  entrypoint: [""]                 # <— Shell wieder aktivieren
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]           # <- Shell zurückholen; überschreibt ENTRYPOINT ["trivy"]
   script:
     - trivy --version
     - trivy image --severity CRITICAL,HIGH --ignore-unfixed --no-progress "$BACKEND_IMAGE"
     - trivy image --format cyclonedx --output backend-sbom.cdx.json "$BACKEND_IMAGE"
   artifacts:
     when: always
-    paths: [ backend-sbom.cdx.json ]
-    reports: { cyclonedx: backend-sbom.cdx.json }
+    paths:
+      - backend-sbom.cdx.json
   allow_failure: true
 
 trivy:frontend:
   stage: security
-  image: aquasec/trivy:latest
-  entrypoint: [""]                 # <— Shell wieder aktivieren
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
   script:
-    - trivy --version
     - trivy image --severity CRITICAL,HIGH --ignore-unfixed --no-progress "$FRONTEND_IMAGE"
     - trivy image --format cyclonedx --output frontend-sbom.cdx.json "$FRONTEND_IMAGE"
   artifacts:
     when: always
-    paths: [ frontend-sbom.cdx.json ]
-    reports: { cyclonedx: frontend-sbom.cdx.json }
+    paths:
+      - frontend-sbom.cdx.json
   allow_failure: true
