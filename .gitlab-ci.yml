@@ -82,11 +82,15 @@ variables:
   image: docker:26-cli
   services:
     - name: docker:26-dind
+      alias: docker   
       command: ["--tls=false"]
   variables:
-    DOCKER_HOST: tcp://docker:2375
+      DOCKER_HOST: tcp://docker:2375  # <-- auf den Service zeigen
+      DOCKER_TLS_CERTDIR: ""          # <-- TLS aus
   before_script:
     - mkdir -p "$TRIVY_CACHE_DIR"
+  # Falls euer Runner DinD sonst nicht erlaubt:
+  # privileged: true
 
 trivy:backend:
   extends: .trivy-template
