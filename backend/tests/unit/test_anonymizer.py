@@ -1,5 +1,7 @@
 from pathlib import Path
-from anonymizer import encode_text, decode_text, load_mapping, save_mapping
+
+from anonymizer import decode_text, encode_text, load_mapping, save_mapping
+
 
 def test_mapping_io_roundtrip(tmp_path: Path):
     map_path = tmp_path / "mapping.txt"
@@ -11,6 +13,7 @@ def test_mapping_io_roundtrip(tmp_path: Path):
     fwd2, rev2 = load_mapping(map_path)
     assert fwd2["Alice"] == "AAAA0000"
     assert rev2["BBBB1111"] == "Bob"
+
 
 def test_encode_then_decode_simple():
     src = "Hi [[Alice]] and Bob."

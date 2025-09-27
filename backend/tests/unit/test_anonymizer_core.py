@@ -1,15 +1,22 @@
 import re
+
 from anonymizer_core import (
-    anonymize, encode_text, decode_text,
-    build_mappings_from_lines, serialize_new_mappings, DEFAULT_HASH_LENGTH
+    DEFAULT_HASH_LENGTH,
+    anonymize,
+    build_mappings_from_lines,
+    decode_text,
+    encode_text,
+    serialize_new_mappings,
 )
 
 HEX_RE = re.compile(r"^[0-9a-f]+$")
+
 
 def test_anonymize_hex_length_default():
     token = anonymize("ignored", length=DEFAULT_HASH_LENGTH)
     assert len(token) == DEFAULT_HASH_LENGTH
     assert HEX_RE.match(token)
+
 
 def test_build_and_serialize_roundtrip():
     text = "ABCD1234 = Alice\nEFGH5678 = Bob\n"
@@ -18,6 +25,7 @@ def test_build_and_serialize_roundtrip():
     assert h2o["EFGH5678"] == "Bob"
     out = serialize_new_mappings({"ZZZZ9999": "Charlie"})
     assert out.strip() == "ZZZZ9999 = Charlie"
+
 
 def test_encode_decode_text():
     h2o, o2h = {}, {}
