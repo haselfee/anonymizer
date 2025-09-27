@@ -24,45 +24,38 @@ lint:
     - ruff format backend --check
   cache:
     key:
+      prefix: "ruff"
       files:
         - requirements.txt
         - requirements-dev.txt
-        - pyproject.toml
-        - poetry.lock
-      prefix: "pip"
     paths:
-      - .cache/pip
-    policy: pull-push
+      - backend/.ruff_cache/
+  policy: pull-push
 
-test:
+test:backend:
   stage: test
+  image: python:3.12-slim
+  before_script:
+    - python -m venv .venv && . .venv/bin/activate
+    - pip install -U pip
+    - pip install -r requirements.txt -r requirements-dev.txt
   script:
-    - |
-      if [ -f backend/requirements.txt ]; then
-        pip install -r backend/requirements.txt
-      fi
-    - pytest --maxfail=1 -q \
-        --cov=backend --cov-report=xml:coverage.xml \
-        --junitxml=junit.xml
+    - pytest -q
   cache:
     key:
+      prefix: "pip"
       files:
         - requirements.txt
         - requirements-dev.txt
-        - pyproject.toml
-        - poetry.lock
-      prefix: "pip"
     paths:
-      - .cache/pip
-    policy: pull-push
+      - .venv/
   artifacts:
     when: always
     reports:
-      junit: junit.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
-
+      junit: pytest-junit.xml
+    paths:
+      - .pytest_cache/
+      
 # Datei-/FS-Scan (nutzt Trivy-Container)
 security:
   stage: security
@@ -77,37 +70,35 @@ security:
       - .trivy-cache/
     policy: pull-push
 
+variables:
+  BACKEND_IMAGE: "$CI_REGISTRY_IMAGE/anonymizer-backend:1.0.0"
+  FRONTEND_IMAGE: "$CI_REGISTRY_IMAGE/anonymizer-frontend:1.0.0"
+  TRIVY_CACHE_DIR: .trivy-cache
+
 # Image-Scans (Backend)
 trivy:backend:
   stage: security
   image: aquasec/trivy:latest
-  before_script: []
   script:
-    - trivy --version
     - trivy image --severity CRITICAL,HIGH --ignore-unfixed --no-progress "$BACKEND_IMAGE"
     - trivy image --format cyclonedx --output backend-sbom.cdx.json "$BACKEND_IMAGE"
   artifacts:
     when: always
-    paths:
-      - backend-sbom.cdx.json
-    reports:
-      cyclonedx: backend-sbom.cdx.json
+    paths: [ backend-sbom.cdx.json ]
+    reports: { cyclonedx: backend-sbom.cdx.json }
   allow_failure: true
 
 # Image-Scans (Frontend)
 trivy:frontend:
   stage: security
   image: aquasec/trivy:latest
-  before_script: []
   script:
     - trivy image --severity CRITICAL,HIGH --ignore-unfixed --no-progress "$FRONTEND_IMAGE"
     - trivy image --format cyclonedx --output frontend-sbom.cdx.json "$FRONTEND_IMAGE"
   artifacts:
     when: always
-    paths:
-      - frontend-sbom.cdx.json
-    reports:
-      cyclonedx: frontend-sbom.cdx.json
+    paths: [ frontend-sbom.cdx.json ]
+    reports: { cyclonedx: frontend-sbom.cdx.json }
   allow_failure: true
 
 # Kurzbegründung:
