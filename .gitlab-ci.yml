@@ -30,7 +30,7 @@ lint:
         - requirements-dev.txt
     paths:
       - backend/.ruff_cache/
-    policy: pull-push
+    policy: pull-push   # <-- HIER ist korrekt (unterhalb von cache)
 
 test:backend:
   stage: test
@@ -49,7 +49,7 @@ test:backend:
         - requirements-dev.txt
     paths:
       - .venv/
-    policy: pull-push
+    policy: pull-push   # <-- HIER ist korrekt
   artifacts:
     when: always
     reports:
