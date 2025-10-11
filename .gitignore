@@ -1,6 +1,5 @@
 anonymizer-data.txt
 
-
 # Byte-compiled / optimized / DLL files
 **/__pycache__/
 **/*.py[codz]
@@ -28,6 +27,13 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+# python
+**/*.pytest_cache/
+**/*.pyc
+**/*mapping.txt
+**/input.txt
+**/data/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
