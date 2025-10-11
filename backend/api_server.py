@@ -6,10 +6,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-
 import anonymizer  # package-relative import aus backend.anonymizer
 
+# NEW: lightweight environment logging (no behavior change)
+import logging
+from detect_env import running_in_container, running_under_uvicorn
+
 app = FastAPI(title="Anonymizer API")
+logger = logging.getLogger("anonymizer")
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,6 +41,17 @@ MAP_PATH = Path("mapping.txt")
 @app.get("/health")
 def health() -> dict:
     return {"ok": True}
+
+
+# Log detection at startup – mapping remains file-based
+@app.on_event("startup")
+def _log_environment() -> None:
+    try:
+        mode = "container" if running_in_container() else "host"
+        server = "uvicorn" if running_under_uvicorn() else "other"
+        logger.info(f"[env] mode={mode} server={server} mapping=file:{MAP_PATH}")
+    except Exception as exc:
+        logger.warning(f"[env] detection failed: {exc!r}")
 
 
 @app.post("/encode", response_model=TextOut)
