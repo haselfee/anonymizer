@@ -25,7 +25,7 @@ spec:
       {{- end }}
       containers:
         - name: frontend
-          image: "{{ include "anonymizer.image" (dict "Values" .Values "repository" .Values.frontend.repository "tag" .Values.frontend.tag) }}"
+          image: {{ include "anonymizer.image" (dict "Values" .Values "repository" .Values.frontend.repository "tag" .Values.frontend.tag) }}
           imagePullPolicy: {{ .Values.frontend.pullPolicy | default "IfNotPresent" }}
           # Benannter Container-Port
           ports:

@@ -12,10 +12,20 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/version: {{ .Chart.AppVersion }}
 {{- end -}}
 
+{{/* decides if the first path segment looks like a registry (has '.' or ':' or 'localhost') */}}
+{{- define "anonymizer._hasRegistry" -}}
+{{- $first := (splitList "/" .repository | first) -}}
+{{- if or (contains "." $first) (contains ":" $first) (eq $first "localhost") -}}true{{- else -}}false{{- end -}}
+{{- end -}}
+
+{{/* Safe image builder: only prefix when non-empty */}}
 {{- define "anonymizer.image" -}}
-{{- $registry := required "image.registry is required" .Values.image.registry -}}
-{{- $groupProject := required "image.groupProject is required" .Values.image.groupProject -}}
-{{- $repo := required "repository is required" .repository -}}
-{{- $tag  := default "latest" .tag -}}
-{{- printf "%s/%s/%s:%s" $registry $groupProject $repo $tag -}}
+{{- $prefix := default "" .Values.global.imageRegistry -}}
+{{- $repo   := .repository -}}
+{{- $tag    := .tag -}}
+{{- if ne $prefix "" -}}
+{{- printf "%s/%s:%s" $prefix $repo $tag -}}
+{{- else -}}
+{{- printf "%s:%s" $repo $tag -}}
+{{- end -}}
 {{- end -}}
