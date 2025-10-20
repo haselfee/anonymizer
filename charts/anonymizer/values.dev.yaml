@@ -4,6 +4,13 @@ global:
 image:
   pullSecrets: []                 # lokale Registry ist ohne Auth
 
+ingress:
+  enabled: true
+  className: traefik
+  hosts:
+    frontend: anonymizer.local
+    backend: api.anonymizer.local
+
 backend:
   repository: k3d-registry:5000/anonymizer-backend
   tag: "dev"

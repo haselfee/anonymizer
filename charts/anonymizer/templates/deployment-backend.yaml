@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "anonymizer.fullname" . }}-backend
-  labels:
-    {{- include "anonymizer.labels" . | nindent 4 }}
+  annotations:
+    app.kubernetes.io/image: "{{ .Values.backend.repository }}:{{ .Values.backend.tag }}"
+    app.kubernetes.io/version: "{{ .Values.backend.tag }}"
 spec:
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit | default 2 }}
   replicas: {{ .Values.backend.replicas | default 1 }}
@@ -47,11 +47,7 @@ spec:
       containers:
       - name: backend
         # orientiert sich an _helpers.tpl
-        image: {{ include "anonymizer.image" (dict "Values" .Values "repository" .Values.backend.repository "tag" .Values.backend.tag) }}
-
-        # funktioniert orientiert sich aber nicht an _helpers.tpl
-        #image: "{{ .Values.image.registry }}/{{ .Values.image.groupProject }}/{{ .Values.backend.repository }}:{{ default "latest" .Values.backend.tag }}"
-
+        image: {{ include "anonymizer.image" (dict "Values" .Values "repository" .Values.backend.repository  "tag" .Values.backend.tag) }}
         imagePullPolicy: {{ .Values.backend.pullPolicy | default "IfNotPresent" }}
 
         ports:

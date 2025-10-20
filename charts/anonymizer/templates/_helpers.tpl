@@ -12,18 +12,21 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/version: {{ .Chart.AppVersion }}
 {{- end -}}
 
-{{/* decides if the first path segment looks like a registry (has '.' or ':' or 'localhost') */}}
+{{/* Detect if repository already contains a registry (first path segment has '.' or ':' or equals 'localhost') */}}
 {{- define "anonymizer._hasRegistry" -}}
-{{- $first := (splitList "/" .repository | first) -}}
+{{- $first := (index (splitList "/" .repository) 0) -}}
 {{- if or (contains "." $first) (contains ":" $first) (eq $first "localhost") -}}true{{- else -}}false{{- end -}}
 {{- end -}}
 
-{{/* Safe image builder: only prefix when non-empty */}}
+{{/* Build image string safely. Prefix with global.imageRegistry only if non-empty AND repo has no registry */}}
 {{- define "anonymizer.image" -}}
-{{- $prefix := default "" .Values.global.imageRegistry -}}
-{{- $repo   := .repository -}}
-{{- $tag    := .tag -}}
-{{- if ne $prefix "" -}}
+{{- $vals    := .Values           | default (dict) -}}
+{{- $global  := $vals.global      | default (dict) -}}
+{{- $prefix  := $global.imageRegistry | default "" -}}
+{{- $repo    := .repository -}}
+{{- $tag     := .tag | default "latest" -}}
+{{- $hasReg  := (include "anonymizer._hasRegistry" (dict "repository" $repo)) | eq "true" -}}
+{{- if and $prefix (ne $prefix "") (not $hasReg) -}}
 {{- printf "%s/%s:%s" $prefix $repo $tag -}}
 {{- else -}}
 {{- printf "%s:%s" $repo $tag -}}
