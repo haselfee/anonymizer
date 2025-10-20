@@ -1,5 +1,8 @@
 anonymizer-data.txt
 
+# k3d local registry mirror (host-specific)
+registries.yaml
+
 # Byte-compiled / optimized / DLL files
 **/__pycache__/
 **/*.py[codz]
