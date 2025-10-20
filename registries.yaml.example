@@ -1,0 +1,14 @@
+mirrors:
+  "k3d-registry:5000":
+    endpoint:
+      - "http://172.19.0.4:5000"
+  "k3d-k3d-registry:5000":
+    endpoint:
+      - "http://172.19.0.4:5000"
+configs:
+  "k3d-registry:5000":
+    tls:
+      insecure_skip_verify: true
+  "k3d-k3d-registry:5000":
+    tls:
+      insecure_skip_verify: true
