@@ -1,6 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: anonymizer-backend
   annotations:
     app.kubernetes.io/image: "{{ .Values.backend.repository }}:{{ .Values.backend.tag }}"
     app.kubernetes.io/version: "{{ .Values.backend.tag }}"
