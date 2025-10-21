@@ -15,9 +15,18 @@ TAG      ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 BACKEND_IMG_H  := $(REG_HOST)/anonymizer-backend:$(TAG)
 FRONTEND_IMG_H := $(REG_HOST)/anonymizer-frontend:$(TAG)
 
+# =============================================================================
+#  K3D Cluster Recreate (Golden Path)
+# =============================================================================
+K3D_CLUSTER      ?= anonymizer
+K3D_API_PORT     ?= 6445
+K3D_REGISTRY     ?= k3d-registry:5000
+K3D_NAMESPACE    ?= anonymizer
+KUBECONFIG_FILE  ?= ~/.kube/config
+
 
 # -------- Targets --------
-.PHONY: all build push deploy restart logs pf clean print-vars registry-config check-hosts clean-rollout
+.PHONY: all build push deploy restart logs pf clean print-vars registry-config check-hosts clean-rollout  k3d-recreate
 
 all: print-vars build push deploy
 
@@ -115,3 +124,25 @@ clean-rollout:
 	kubectl delete rs -n anonymizer -l app=anonymizer || true
 	kubectl delete pod -n anonymizer -l app=anonymizer --force --grace-period=0 || true
 	kubectl scale deploy anonymizer-{frontend,backend} -n anonymizer --replicas=1
+
+k3d-recreate: registry-config
+	@echo "🧹 Deleting old k3d cluster '$(K3D_CLUSTER)' (if exists)..."
+	@k3d cluster delete $(K3D_CLUSTER) >/dev/null 2>&1 || true
+
+	@echo "🚀 Creating new k3d cluster with registry mirror..."
+	k3d cluster create $(K3D_CLUSTER) \
+		--api-port $(K3D_API_PORT) \
+		--registry-use $(K3D_REGISTRY) \
+		--registry-config registries.yaml
+
+	@echo "📁 Setting up kubeconfig for kubectl..."
+	mkdir -p $(dir $(KUBECONFIG_FILE))
+	k3d kubeconfig get $(K3D_CLUSTER) | sed 's/0\.0\.0\.0/127.0.0.1/g' > $(KUBECONFIG_FILE)
+	kubectl config use-context k3d-$(K3D_CLUSTER)
+	kubectl create ns $(K3D_NAMESPACE) 2>/dev/null || true
+	kubectl config set-context --current --namespace=$(K3D_NAMESPACE)
+
+	@echo "✅ Cluster recreated successfully!"
+	@echo "Next steps:"
+	@echo "  1. make deploy"
+	@echo "  2. kubectl get pods -n $(K3D_NAMESPACE) -w"
