@@ -1,0 +1,11 @@
+Hi [NAME_1],
+
+thanks again for the document about the [PROJECT_1].  
+[NAME_2] mentioned that the customer from [CITY_1] wants an update next week.  
+Could you summarize the key points for me and attach the draft?
+
+Also, please check if the phone number [PHONE_1] for [NAME_3] is still valid —  
+we might need to reach her before Monday.
+
+Best,  
+[NAME_4]

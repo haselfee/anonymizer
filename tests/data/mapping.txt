@@ -1,0 +1,7 @@
+[NAME_1] = Julia
+[PROJECT_1] = Solaris project
+[NAME_2] = Dr. Anderson
+[CITY_1] = Hamburg
+[PHONE_1] = +49 171 2233445
+[NAME_3] = Ms. Keller
+[NAME_4] = Tom
