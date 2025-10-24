@@ -2,6 +2,13 @@ SHELL := /bin/bash
 .ONESHELL:
 .SILENT:
 
+.PHONY: mirror-main
+mirror-main:
+	@echo "🔁 Mirroring 'main' to GitHub..."
+	@git fetch github main >/dev/null 2>&1 || true
+	@git push github main --force-with-lease
+	@echo "✅ Mirror complete: GitHub(main) now matches local(main)"
+
 # Host-Perspektive (push)
 REG_HOST := $(strip localhost:5000)
 # Cluster-Perspektive (pull)
