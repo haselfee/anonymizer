@@ -32,12 +32,13 @@ kubectl get svc -n anonymizer
 ``` mermaid
 
 flowchart LR
-  User[(Browser)] --> FE[Frontend (Container)]
-  FE --> BE[Backend (Container)]
-  subgraph Kubernetes (k3d)
+  User["Browser"] --> FE["Frontend Container"]
+  FE --> BE["Backend Container"]
+  subgraph "Kubernetes (k3d)"
     FE --- BE
-    class FE,BE internal;
+    class FE,BE internal
   end
+
 ```
 
 - Frontend: serves UI (static assets or SPA).
