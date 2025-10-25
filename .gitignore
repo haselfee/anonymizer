@@ -1,4 +1,6 @@
 anonymizer-data.txt
+!tests/data/
+!tests/data/**
 
 # k3d local registry mirror (host-specific)
 registries.yaml
