@@ -61,31 +61,75 @@ flowchart LR
 └─ README.md
  ```
 
-## Local Development
+### Image Workflow and Portability
+
+This project supports exactly two registry modes:
+
+| Mode                                 | Description                                                                                        | Typical Use                           |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| **Local (k3d)**                      | Build and import images directly into your local k3d cluster. No registry or credentials required. | Fast development, debugging, learning |
+| **GitHub Container Registry (GHCR)** | Push and pull images from `ghcr.io/<owner>/<repo>/<image>:<tag>`.                                  | Public or team-wide sharing           |
+
+All other registries (Docker Hub, GitLab Registry, etc.) are intentionally unsupported to keep the setup simple and portable.
+
+## Local Development (k3d)
+
 ### Prerequisites
 
 - Docker or compatible runtime
 - k3d + kubectl + Helm
 - Make (optional but convenient)
 
-## Build & Load (no registry)
-
-We default to a registry-free developer flow to avoid CI breakage:
-
-``` bash
-
-# Tag with :local and skip registry pushes
-make build           # produces anonymizer-frontend:local, anonymizer-backend:local
-k3d image import anonymizer-frontend:local anonymizer-backend:local -c anonymizer
-```
-
-Install via Helm
 ``` bash 
-
+make doctor
+make build
+make import-k3d
 helm upgrade --install anonymizer charts/anonymizer \
   --namespace anonymizer --create-namespace \
   -f charts/anonymizer/values.dev.yaml
 ```
+
+  This builds local images (:local or :dev) and imports them into the running k3d cluster.
+Helm then deploys those images without pulling from any external registry (pullPolicy: Never).
+
+Push to k3d (optional)
+
+``` bash 
+
+export REGISTRY_HOST=localhost
+export REGISTRY_PORT=5000
+export IMAGE_TAG=dev1
+make k3d-registry-create
+make build push
+
+```
+
+
+Push to GHCR (optional)
+
+``` bash 
+export REGISTRY_HOST=ghcr.io
+export REGISTRY_PATH=<owner>/<repo>
+export IMAGE_TAG=v0.1.0
+export GH_USER=<user>
+export GHCR_TOKEN=<token with package:write>
+make ghcr-login
+make build push
+
+```
+
+Images are tagged as
+ghcr.io/<owner>/<repo>/anonymizer-frontend:v0.1.0
+and
+ghcr.io/<owner>/<repo>/anonymizer-backend:v0.1.0.
+
+GitLab CI and Other CIs
+
+GitLab pipelines build and test without any registry dependency.
+The variable REGISTRY_HOST is left empty, so builds use local tags (:local) and skip push steps automatically.
+This keeps CI fast and independent of external services.
+
+
 To uninstall:
 ``` bash 
 

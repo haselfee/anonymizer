@@ -180,6 +180,24 @@ k3d-recreate: registry-config
 	@echo "  1. make deploy"
 	@echo "  2. kubectl get pods -n $(K3D_NAMESPACE) -w"
 
+.PHONY: doctor
+doctor: ## Quick sanity checks (paths, tools, cluster, registry mode)
+	@echo "== Doctor =="
+	@test -f frontend/package.json || { echo "❌ Missing frontend/package.json"; exit 1; }
+	@test -f backend/requirements.txt || { echo "❌ Missing backend/requirements.txt"; exit 1; }
+	@command -v docker >/dev/null || { echo "❌ docker not found"; exit 1; }
+	@command -v helm   >/dev/null || { echo "❌ helm not found"; exit 1; }
+	@command -v kubectl>/dev/null || { echo "❌ kubectl not found"; exit 1; }
+	@command -v k3d    >/dev/null || echo "ℹ︎ k3d not found (ok if only building)"
+	@if [ -z "$(REGISTRY_PREFIX)" ]; then \
+	  echo "Mode: local, registry-free (portable)"; \
+	else \
+	  echo "Mode: registry = $(REGISTRY_PREFIX)"; \
+	fi
+	@echo "FE_IMAGE=$(FE_IMAGE)"
+	@echo "BE_IMAGE=$(BE_IMAGE)"
+	@echo "✅ Doctor passed"
+
 help: 
 	## Show available targets
 	@echo "Anonymizer Makefile — portable mode"

@@ -1,6 +1,5 @@
 
 # 1) Pipeline soll auf Push + MR + Tags laufen
-
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
@@ -9,15 +8,17 @@ workflow:
     - when: never
 
 # 2) Stage-Reihenfolge explizit
-
 stages:
   - lint
   - test
   - security
+  - build
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   TRIVY_CACHE_DIR: ".trivy-cache"
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
 
 default:
   image: python:3.12-slim
@@ -136,3 +137,11 @@ trivy:frontend:
     when: always
     paths: [ frontend-sbom.cdx.json ]
   allow_failure: true
+
+  build:
+    stage: build
+    image: docker:27
+    services: ["docker:27-dind"]
+    script:
+      - make doctor
+      - make build

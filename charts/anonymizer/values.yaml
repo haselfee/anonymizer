@@ -1,8 +1,15 @@
+#image:
+#  registry: vmgitlab:5050
+#  groupProject: workaholics/anonymizer
+#  pullSecrets:
+#    - name: vmgitlab-regcred
+
 image:
-  registry: vmgitlab:5050
-  groupProject: workaholics/anonymizer
-  pullSecrets:
-    - name: vmgitlab-regcred
+  repositoryFrontend: ghcr.io/<owner>/<repo>/anonymizer-frontend
+  tagFrontend: v0.1.0
+  repositoryBackend: ghcr.io/<owner>/<repo>/anonymizer-backend
+  tagBackend: v0.1.0
+  pullPolicy: IfNotPresent
 
 backend:
   repository: anonymizer-backend

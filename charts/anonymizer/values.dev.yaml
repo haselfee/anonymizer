@@ -2,7 +2,18 @@ global:
   imageRegistry: ""               # keine Doppel-Prefixes!
 
 image:
-  pullSecrets: []                 # lokale Registry ist ohne Auth
+  repositoryFrontend: anonymizer-frontend
+  tagFrontend: local
+  repositoryBackend: anonymizer-backend
+  tagBackend: local
+  pullPolicy: Never
+
+#image:
+#  repositoryFrontend: ghcr.io/<owner>/<repo>/anonymizer-frontend
+#  tagFrontend: v0.1.0
+#  repositoryBackend: ghcr.io/<owner>/<repo>/anonymizer-backend
+#  tagBackend: v0.1.0
+#  pullPolicy: IfNotPresent
 
 ingress:
   enabled: true
