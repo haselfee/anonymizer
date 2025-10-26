@@ -47,7 +47,7 @@ flowchart LR
 
 ## Repo Layout
 
-``` pgsql
+``` text
 
 ├─ backend/
 ├─ frontend/
@@ -59,7 +59,7 @@ flowchart LR
 │     └─ _helpers.tpl
 ├─ Makefile
 └─ README.md
- ```
+```
 
 ### Image Workflow and Portability
 
@@ -92,7 +92,7 @@ helm upgrade --install anonymizer charts/anonymizer \
   This builds local images (:local or :dev) and imports them into the running k3d cluster.
 Helm then deploys those images without pulling from any external registry (pullPolicy: Never).
 
-Push to k3d (optional)
+### Push to k3d (optional)
 
 ``` bash 
 
@@ -104,8 +104,7 @@ make build push
 
 ```
 
-
-Push to GHCR (optional)
+### Push to GHCR (optional)
 
 ``` bash 
 export REGISTRY_HOST=ghcr.io
@@ -131,38 +130,11 @@ This keeps CI fast and independent of external services.
 
 
 To uninstall:
+
 ``` bash 
 
 helm uninstall anonymizer -n anonymizer
 ```
-
-## Images & Registries
-
-This project supports three modes:
-
-1. Registry-free (default for learning):
-
-  - Build with local tags (:local), import into k3d.
-
-2. Local k3d registry (optional):
-
-- If you create k3d-registry:5000, set:
-``` bash 
-  REGISTRY_HOST=k3d-registry
-  REGISTRY_PORT=5000
-  make build push
-
-```
-
-3. Remote registries (GitHub/GitLab):
-
-- Provide REGISTRY_HOST, optional REGISTRY_PORT, and credentials (via docker login or CI secrets).
-
-- Example tags: ghcr.io/<org>/<repo>/<name>:<tag> or gitlab.local:5050/<group>/<project>/<name>:<tag>.
-
-The Makefile is designed to not fail if no registry is configured; it will still produce :local images.
-
----
 
 ## Configuration
 
@@ -230,7 +202,8 @@ jobs:
 ```
 
 GitLab CI (minimal)
-``` bash 
+
+``` yaml
 
 stages: [build]
 build:
@@ -279,13 +252,12 @@ Commit messages: imperative style (e.g., “Add Helm values for local dev”).
 
 ## License
 
-Anonymizer is licensed under MIT 
+Licensed under the MIT License
 
 ## Acknowledgements
 
-k3d, Helm, Kubernetes communities
-
-Everyone exploring clean DevOps with small, understandable projects
+Acknowledgements to the k3d, Helm, and Kubernetes communities,
+and to everyone exploring clean DevOps with small, understandable projects.
 
 
 
