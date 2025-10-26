@@ -1,49 +1,37 @@
-name: Package & Push Helm chart (OCI to Docker Hub)
+name: Package Helm chart (no push)
 
 on:
   push:
+    branches: [ "main" ]
     paths:
       - 'charts/**'
       - '.github/workflows/helm-chart.yml'
-    branches: [ "main" ]
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   helm:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install Helm
         uses: azure/setup-helm@v4
         with:
-          version: v3.14.4  # oder aktuell
-
-      - name: Login to Docker Hub (OCI registry)
-        run: |
-          echo "${DOCKERHUB_TOKEN}" | helm registry login registry-1.docker.io \
-            --username "${DOCKERHUB_USERNAME}" --password-stdin
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
+          version: v3.14.4
 
       - name: Lint chart
         run: helm lint charts/anonymizer
 
-      - name: Set version from Chart.yaml
-        id: ver
-        run: |
-          VER=$(yq -r '.version' charts/anonymizer/Chart.yaml)
-          APP=$(yq -r '.name' charts/anonymizer/Chart.yaml)
-          echo "ver=$VER" >> $GITHUB_OUTPUT
-          echo "app=$APP" >> $GITHUB_OUTPUT
-        shell: bash
-
       - name: Package chart
         run: helm package charts/anonymizer --destination dist
 
-      - name: Push chart to Docker Hub (OCI)
-        run: |
-          helm push "dist/${{ steps.ver.outputs.app }}-${{ steps.ver.outputs.ver }}.tgz" \
-            oci://registry-1.docker.io/${{ secrets.DOCKERHUB_USERNAME }}/helm
+      # Optional: Artefakt anhängen (praktisch für Download/Review)
+      - name: Upload chart artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: anonymizer-chart-${{ github.sha }}
+          path: dist/*.tgz
