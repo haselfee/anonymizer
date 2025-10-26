@@ -20,8 +20,8 @@ k3d image import anonymizer-frontend:local anonymizer-backend:local -c anonymize
 
 # 4) Install/upgrade the Helm chart
 helm upgrade --install anonymizer charts/anonymizer \
-  --namespace anonymizer --create-namespace \
-  -f charts/anonymizer/values.dev.yaml
+  -n anonymizer --create-namespace \
+  -f charts/anonymizer/values.ghcr.yaml
 
 # 5) Get the service endpoint(s)
 kubectl get svc -n anonymizer
@@ -229,7 +229,6 @@ If no registry credentials are present, the build still succeeds locally (no pus
   - Non-root user, minimal base images, Trivy scans (planned).
   - We will introduce these changes later to avoid blocking learning flow.
 
-
 Troubleshooting
 
 - Images not found in cluster
@@ -242,6 +241,20 @@ Troubleshooting
 - Push errors in CI
   - Remove/pause push steps, or ensure REGISTRY_HOST + login are set.
   - The build should not fail just because no registry exists.
+
+
+Pull from Github Container Registry
+``` bash 
+
+# Pull locally (latest from main)
+docker pull ghcr.io/haselfee/anonymizer-backend:latest
+docker pull ghcr.io/haselfee/anonymizer-frontend:latest
+
+# Run a quick smoke
+docker run --rm ghcr.io/haselfee/anonymizer-backend:latest python -c "print('ok')"
+cid=$(docker run -d -p 8080:80 ghcr.io/haselfee/anonymizer-frontend:latest); sleep 2; curl -fsS localhost:8080 >/dev/null && echo "frontend ok"; docker rm -f "$cid"
+```
+
 
 ## Contributing
 

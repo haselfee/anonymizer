@@ -29,19 +29,19 @@ jobs:
           DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Lint chart
-        run: helm lint charts/myapp
+        run: helm lint charts/anonymizer
 
       - name: Set version from Chart.yaml
         id: ver
         run: |
-          VER=$(yq -r '.version' charts/myapp/Chart.yaml)
-          APP=$(yq -r '.name' charts/myapp/Chart.yaml)
+          VER=$(yq -r '.version' charts/anonymizer/Chart.yaml)
+          APP=$(yq -r '.name' charts/anonymizer/Chart.yaml)
           echo "ver=$VER" >> $GITHUB_OUTPUT
           echo "app=$APP" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Package chart
-        run: helm package charts/myapp --destination dist
+        run: helm package charts/anonymizer --destination dist
 
       - name: Push chart to Docker Hub (OCI)
         run: |
