@@ -1,5 +1,7 @@
 name: build
-on: [push, pull_request]
+on:on:
+  pull_request:
+    branches: [ main ]
 jobs:
   docker-build:
     runs-on: ubuntu-latest
