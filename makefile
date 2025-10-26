@@ -2,6 +2,10 @@ SHELL := /bin/bash
 .ONESHELL:
 .SILENT:
 
+# Keep all your existing variables/targets.
+# Add this include near the top:
+include mk/portable-registry.mk
+
 .PHONY: mirror-main
 mirror-main:
 	@echo "🔁 Mirroring 'main' to GitHub..."
@@ -37,8 +41,12 @@ KUBECONFIG_FILE  ?= ~/.kube/config
 
 all: print-vars build push deploy
 
-build: build_backend build_frontend
-	@echo "Built images with tag $(TAG)"
+#build: build_backend build_frontend
+#	@echo "Built images with tag $(TAG)"
+
+build: ## Build FE+BE images (portable)
+	$(MAKE) __portable-build-fe
+	$(MAKE) __portable-build-be
 
 build_backend:
 	docker build -t $(BACKEND_IMG_H) -f backend/Dockerfile .
@@ -46,14 +54,25 @@ build_backend:
 build_frontend:
 	docker build -t $(FRONTEND_IMG_H) -f frontend/Dockerfile .
 
-push: push_backend push_frontend
-	@echo "Pushed to $(REG_HOST)"
+#push: push_backend push_frontend
+#	@echo "Pushed to $(REG_HOST)"
+
+push: ## Push FE+BE if registry configured (no-op otherwise)
+	$(MAKE) __portable-push-fe
+	$(MAKE) __portable-push-be
 
 push_backend:
 	docker push $(BACKEND_IMG_H)
 
 push_frontend:
 	docker push $(FRONTEND_IMG_H)
+
+
+import-k3d: ## Import images into k3d cluster
+	$(MAKE) __portable-import-k3d
+
+print-img: ## Show effective image references
+	$(MAKE) __portable-print
 
 deploy: | check-hosts
 	@echo "Deploying TAG=$(TAG) to $(CLUSTER_REG)"
@@ -87,8 +106,13 @@ print-vars:
 	echo "BACKEND_IMG_H=[$(BACKEND_IMG_H)]"
 # --- NEW: generate registries.yaml reliably (no heredoc pitfalls)
 .PHONY: registry-config
-registry-config:
-	@REG_IP=$$(docker inspect k3d-k3d-registry --format '{{ (index .NetworkSettings.Networks "k3d-anonymizer").IPAddress }}' 2>/dev/null); \
+
+registry-config: ## Configure local registry (no-op if none defined)
+	@if [ -z "$(REGISTRY_PREFIX)" ]; then \
+	  echo "⟳ No REGISTRY_HOST set → registry-config skipped (no-op)"; \
+	else \
+	  echo "Configuring registry at $(REGISTRY_PREFIX) ..."; \
+	 @REG_IP=$$(docker inspect k3d-k3d-registry --format '{{ (index .NetworkSettings.Networks "k3d-anonymizer").IPAddress }}' 2>/dev/null); \
 	if [ -z "$$REG_IP" ]; then \
 	  docker network connect k3d-anonymizer k3d-k3d-registry 2>/dev/null || true; \
 	  docker restart k3d-k3d-registry >/dev/null; sleep 2; \
@@ -112,6 +136,8 @@ registry-config:
 '    tls:' \
 '      insecure_skip_verify: true' \
 	> registries.yaml
+	fi
+
 
 # --- NEW: /etc/hosts recommendation (no auto-edit)
 check-hosts:
@@ -153,3 +179,11 @@ k3d-recreate: registry-config
 	@echo "Next steps:"
 	@echo "  1. make deploy"
 	@echo "  2. kubectl get pods -n $(K3D_NAMESPACE) -w"
+
+help: 
+	## Show available targets
+	@echo "Anonymizer Makefile — portable mode"
+	$(__PRINT_HELP)
+
+
+
