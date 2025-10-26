@@ -49,8 +49,6 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}  # no push on PRs
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/anonymizer-backend:${{ steps.meta.outputs.TAG }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           provenance: false   # optional: speeds things up, avoids provenance issues
 
   build-frontend:
@@ -87,6 +85,4 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/anonymizer-frontend:${{ steps.meta.outputs.TAG }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           provenance: false
