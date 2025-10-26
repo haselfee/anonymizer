@@ -1,0 +1,6 @@
+image:
+  repositoryFrontend: ghcr.io/haselfee/anonymizer-frontend
+  tagFrontend: latest
+  repositoryBackend: ghcr.io/haselfee/anonymizer-backend
+  tagBackend: latest
+  pullPolicy: IfNotPresent
