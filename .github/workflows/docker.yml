@@ -3,17 +3,16 @@ name: Build & Push Docker Images
 on:
   push:
     branches: [ "main" ]
-    tags: [ "v*" ]  # z.B. v1.0.0
+    tags: [ "v*" ]   # e.g., v1.0.0
   pull_request:
 
 permissions:
   contents: read
-  packages: write   # wichtig für GHCR Push
+  packages: write   # required for GHCR push on push/tag
   id-token: write
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAMESPACE: ${{ github.repository_owner }}
 
 jobs:
   build-backend:
@@ -21,7 +20,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Login to GHCR
+      # Normalize owner to lowercase for OCI image refs
+      - name: Normalize owner (lowercase)
+        run: echo "IMAGE_NAMESPACE=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
+      - name: Login to GHCR (push/tag only)
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -32,21 +36,22 @@ jobs:
         id: meta
         run: |
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
-            echo "TAG=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+            echo "TAG=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
           else
-            echo "TAG=latest" >> $GITHUB_OUTPUT
+            echo "TAG=latest" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Build & Push backend
+      - name: Build & (conditionally) Push backend
         uses: docker/build-push-action@v6
         with:
           context: .
           file: backend/Dockerfile
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}  # no push on PRs
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/anonymizer-backend:${{ steps.meta.outputs.TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: false   # optional: speeds things up, avoids provenance issues
 
   build-frontend:
     runs-on: ubuntu-latest
@@ -54,7 +59,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Login to GHCR
+      - name: Normalize owner (lowercase)
+        run: echo "IMAGE_NAMESPACE=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
+      - name: Login to GHCR (push/tag only)
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -65,18 +74,19 @@ jobs:
         id: meta
         run: |
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
-            echo "TAG=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+            echo "TAG=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
           else
-            echo "TAG=latest" >> $GITHUB_OUTPUT
+            echo "TAG=latest" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Build & Push frontend
+      - name: Build & (conditionally) Push frontend
         uses: docker/build-push-action@v6
         with:
           context: .
           file: frontend/Dockerfile
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/anonymizer-frontend:${{ steps.meta.outputs.TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: false
